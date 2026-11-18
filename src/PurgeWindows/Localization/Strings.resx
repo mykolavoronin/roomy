@@ -739,12 +739,6 @@
   <data name="RemovalBinHint" xml:space="preserve">
     <value>Nothing is deleted directly. Space is only freed when you empty the Recycle Bin.</value>
   </data>
-  <data name="RemovalPermanent" xml:space="preserve">
-    <value>Everything is deleted permanently</value>
-  </data>
-  <data name="RemovalPermanentHint" xml:space="preserve">
-    <value>Space is freed right away. Nothing can be restored, so check your picks first.</value>
-  </data>
   <data name="SelectionSplitBoth" xml:space="preserve">
     <value>{0} to the Recycle Bin · {1} deleted for good</value>
   </data>
@@ -767,7 +761,7 @@
     <value>Developer caches</value>
   </data>
   <data name="CatDevCachesDesc" xml:space="preserve">
-    <value>Downloaded packages and build outputs from Maven, Gradle, Cargo and Go. Your tools re-download and rebuild them, so the next build is slower and needs the network. Your projects and settings are untouched.</value>
+    <value>Downloaded packages, build outputs and editor caches from Maven, Gradle, Cargo, Go, NuGet and VS Code's C/C++ tools. Your tools re-download and rebuild them, so the next build is slower and needs the network. Your projects and settings are untouched.</value>
   </data>
   <data name="CatVirtual" xml:space="preserve">
     <value>Virtual machines &amp; emulators</value>
@@ -969,5 +963,161 @@
   </data>
   <data name="QuittingWhileCleaning" xml:space="preserve">
     <value>Stopping the cleanup so Purge for Windows can quit.</value>
+  </data>
+  <data name="CatDiagnostics" xml:space="preserve">
+    <value>Windows diagnostic logs</value>
+  </data>
+  <data name="CatDiagnosticsDesc" xml:space="preserve">
+    <value>Sizes only. Servicing logs, diagnostic traces, event logs, the font cache and the Search index can only be cleared safely through Windows or their own tools, so Purge for Windows reports them and tells you where to act.</value>
+  </data>
+  <data name="CatWinLogs" xml:space="preserve">
+    <value>Windows setup &amp; server logs</value>
+  </data>
+  <data name="CatWinLogsDesc" xml:space="preserve">
+    <value>Windows setup logs, web server logs and Performance Monitor reports. Setup logs are the only record if an upgrade failed, so only clear them once Windows is running well.</value>
+  </data>
+  <data name="CatOutlook" xml:space="preserve">
+    <value>Outlook offline data</value>
+  </data>
+  <data name="CatOutlookDesc" xml:space="preserve">
+    <value>Outlook's offline copies of your mailbox (.ost files). They rebuild from the server, but mail kept only on this PC does not come back — read the warning before deleting.</value>
+  </data>
+  <data name="CatMessaging" xml:space="preserve">
+    <value>Messaging media</value>
+  </data>
+  <data name="CatMessagingDesc" xml:space="preserve">
+    <value>Photos, videos and files received in WhatsApp. They may be the only copy on this PC, so check inside WhatsApp before deleting.</value>
+  </data>
+  <data name="CatCaptures" xml:space="preserve">
+    <value>Game captures</value>
+  </data>
+  <data name="CatCapturesDesc" xml:space="preserve">
+    <value>Clips and screenshots recorded with Game Bar. They are your videos and pictures, not cache — pick the ones you no longer want.</value>
+  </data>
+  <data name="ItemBrowserCrashReports" xml:space="preserve">
+    <value>Browser crash reports</value>
+  </data>
+  <data name="ItemLegacyWebCache" xml:space="preserve">
+    <value>Legacy web cache</value>
+  </data>
+  <data name="ItemZoom" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="ItemSignalLogs" xml:space="preserve">
+    <value>Signal logs</value>
+  </data>
+  <data name="ItemOutlookRoamCache" xml:space="preserve">
+    <value>Outlook settings cache</value>
+  </data>
+  <data name="ItemVsCodeInsiders" xml:space="preserve">
+    <value>VS Code Insiders</value>
+  </data>
+  <data name="ItemNuGetPackages" xml:space="preserve">
+    <value>NuGet global packages</value>
+  </data>
+  <data name="ItemCppCache" xml:space="preserve">
+    <value>VS Code C/C++ cache</value>
+  </data>
+  <data name="ItemSteamDepot" xml:space="preserve">
+    <value>Steam download cache</value>
+  </data>
+  <data name="ItemPanther" xml:space="preserve">
+    <value>Windows setup logs</value>
+  </data>
+  <data name="ItemIisLogs" xml:space="preserve">
+    <value>Web server (IIS) logs</value>
+  </data>
+  <data name="ItemPerfLogs" xml:space="preserve">
+    <value>Performance Monitor reports</value>
+  </data>
+  <data name="ItemCbsLogs" xml:space="preserve">
+    <value>Windows servicing logs</value>
+  </data>
+  <data name="ItemEtlLogs" xml:space="preserve">
+    <value>Diagnostic trace logs</value>
+  </data>
+  <data name="ItemEventLogs" xml:space="preserve">
+    <value>Windows event logs</value>
+  </data>
+  <data name="ItemFontCache" xml:space="preserve">
+    <value>Font cache</value>
+  </data>
+  <data name="ItemSearchIndex" xml:space="preserve">
+    <value>Windows Search index</value>
+  </data>
+  <data name="ItemWhatsApp" xml:space="preserve">
+    <value>WhatsApp media</value>
+  </data>
+  <data name="DockerItemDetail" xml:space="preserve">
+    <value>Prune unused images and build cache inside Docker first, then compact this disk. Never delete the file itself.</value>
+  </data>
+  <data name="CbsLogsDetail" xml:space="preserve">
+    <value>Stop the Windows Modules Installer service first, then delete the contents. Never during an update.</value>
+  </data>
+  <data name="EtlLogsDetail" xml:space="preserve">
+    <value>Delete in Settings → Privacy &amp; security → Diagnostics &amp; feedback → Delete diagnostic data.</value>
+  </data>
+  <data name="EventLogsDetail" xml:space="preserve">
+    <value>Clear in Event Viewer, keeping the Security log. Clearing cannot be undone.</value>
+  </data>
+  <data name="FontCacheDetail" xml:space="preserve">
+    <value>Repair-only: only clear if fonts look broken, after stopping the Font Cache service.</value>
+  </data>
+  <data name="SearchIndexDetail" xml:space="preserve">
+    <value>Never delete the index file by hand. Rebuild in Indexing Options → Advanced → Rebuild.</value>
+  </data>
+  <data name="DiagnosticsNote" xml:space="preserve">
+    <value>Purge for Windows only reports these sizes. Each item says where Windows itself can clear it — never delete these files by hand.</value>
+  </data>
+  <data name="WinLogsNote" xml:space="preserve">
+    <value>Only clear setup logs once Windows is running well after an upgrade, and check Performance Monitor reports first — they are your own.</value>
+  </data>
+  <data name="OutlookNote" xml:space="preserve">
+    <value>Before deleting an .ost file: check the Outbox for unsent mail and export any 'This computer only' folders — that mail is not on the server. Safer first steps: Compact Now in Outlook, or download less mail.</value>
+  </data>
+  <data name="CapturedAgo" xml:space="preserve">
+    <value>Captured {0}</value>
+  </data>
+  <data name="FailNeedsAdmin" xml:space="preserve">
+    <value>This needs administrator rights to remove. Run Purge for Windows as administrator and try again.</value>
+  </data>
+  <data name="FailNeedsAdminAccount" xml:space="preserve">
+    <value>This needs an administrator account. Sign in with an administrator account and try again.</value>
+  </data>
+  <data name="FailInUse" xml:space="preserve">
+    <value>This file is in use by another program. Close the program and try again.</value>
+  </data>
+  <data name="FailSystemProtected" xml:space="preserve">
+    <value>Windows protects this file, so it cannot be removed.</value>
+  </data>
+  <data name="FailSafetySkipped" xml:space="preserve">
+    <value>This was skipped for safety — it may hold something you still need.</value>
+  </data>
+  <data name="FailKeptForOtherApp" xml:space="preserve">
+    <value>This is shared with another app, so it was left alone.</value>
+  </data>
+  <data name="FailBinDisabled" xml:space="preserve">
+    <value>The Recycle Bin is disabled for this drive, so files cannot be moved there.</value>
+  </data>
+  <data name="FailBinFull" xml:space="preserve">
+    <value>The Recycle Bin is full. Empty some space in the bin and try again.</value>
+  </data>
+  <data name="FailShellFailed" xml:space="preserve">
+    <value>Windows could not move this to the Recycle Bin.</value>
+  </data>
+  <data name="FailOwnerToolFailed" xml:space="preserve">
+    <value>The app's own cleanup tool could not finish this.</value>
+  </data>
+  <data name="FailMoveInExplorer" xml:space="preserve">
+    <value>This could not be moved. Try moving it in File Explorer.</value>
+  </data>
+  <data name="FailUnknown" xml:space="preserve">
+    <value>This could not be removed for an unknown reason.</value>
+  </data>
+  <data name="FailRetry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="FailRetryAdmin" xml:space="preserve">
+    <value>Retry as administrator</value>
   </data>
 </root>

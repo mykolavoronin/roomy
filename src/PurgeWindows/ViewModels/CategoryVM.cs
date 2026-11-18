@@ -38,12 +38,11 @@ public sealed class CategoryVM : ObservableObject
     public string? Note => Model.Note;
     public bool HasNote => !string.IsNullOrEmpty(Model.Note);
 
-    public bool IsSafe => Model.Safety == Safety.Safe;
+    public bool IsSafe => Model.Tier == SafetyLevel.Safe;
     public bool IsBlocked => Model.Blocked;
     public bool IsSteam => Model.Action == CleanAction.SteamUninstall;
     public bool IsSettings => Model.Action == CleanAction.OpenSettings;
-    public bool CanSelect => !Model.Blocked && Model.Size > 0 &&
-                             Model.Action is CleanAction.Delete or CleanAction.EmptyRecycleBin;
+    public bool CanSelect => !Model.Blocked && Model.Size > 0 && Model.Action == CleanAction.Delete;
     public bool ItemsSelectable => CanSelect && Items.Count > 1;
     public bool ShowItemList => Model.ShowItems && Items.Count > 0;
     public bool HasDetails => ShowItemList || IsSettings || IsBlocked;

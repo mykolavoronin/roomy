@@ -72,7 +72,7 @@ public sealed class RecycleTests : IDisposable
     }
 
     [Fact]
-    public void CleanerRecyclesDownloadsButDeletesCaches()
+    public void CleanerRecyclesBothReviewAndSafeCategories()
     {
         RequireWindows();
         var download = MakeFile("big-download.zip", TimeSpan.FromDays(60));
@@ -80,22 +80,24 @@ public sealed class RecycleTests : IDisposable
         Directory.CreateDirectory(cacheDir);
         File.WriteAllBytes(Path.Combine(cacheDir, "blob"), new byte[2048]);
 
-        var downloads = new CleanupCategory { Id = "downloads", Title = "Downloads", Description = "", Glyph = "", Safety = Safety.Review };
+        var downloads = new CleanupCategory { Id = "downloads", Title = "Downloads", Description = "", Glyph = "", Tier = SafetyLevel.CheckFirst };
         downloads.Items.Add(new CleanupItem { Name = "zip", Paths = [download], Size = 4096, IsFile = true });
         var caches = new CleanupCategory { Id = "apps", Title = "Caches", Description = "", Glyph = "" };
         caches.Items.Add(new CleanupItem { Name = "cache", Paths = [cacheDir], Size = 2048 });
 
         var r = Cleaner.Run([new(downloads, downloads.Items), new(caches, caches.Items)], null);
 
-        Assert.Equal(4096, r.Recycled);
-        Assert.Equal(2048, r.Freed);
+        // D-21: the Recycle Bin is the default for ALL cleanable items, Safe and
+        // Check-First alike. Nothing is deleted for good by hand.
+        Assert.Equal(6144, r.Recycled);
+        Assert.Equal(0, r.Freed);
         Assert.False(File.Exists(download));
         Assert.Empty(Directory.GetFiles(cacheDir));
         Assert.Equal(2, r.Categories!.Count);
         var dl = r.Categories.Single(c => c.CategoryId == "downloads");
         Assert.Equal(CleanDestination.Recycled, dl.Destination);
         Assert.Equal(4096, dl.Recycled);
-        Assert.Equal(CleanDestination.Deleted, r.Categories.Single(c => c.CategoryId == "apps").Destination);
+        Assert.Equal(CleanDestination.Recycled, r.Categories.Single(c => c.CategoryId == "apps").Destination);
     }
 
     [Fact]
@@ -123,6 +125,7 @@ public sealed class RecycleTests : IDisposable
     [Fact]
     public void CleaningReportsLiveProgress()
     {
+        RequireWindows();
         var cacheDir = Path.Combine(_folder, "cache");
         Directory.CreateDirectory(cacheDir);
         File.WriteAllBytes(Path.Combine(cacheDir, "blob"), new byte[2048]);
@@ -130,29 +133,36 @@ public sealed class RecycleTests : IDisposable
         caches.Items.Add(new CleanupItem { Name = "cache", Paths = [cacheDir], Size = 2048 });
 
         var seen = new List<CleanProgress>();
-        var r = Cleaner.Run([new(caches, caches.Items)], new Progress<CleanProgress>(seen.Add), RemovalMode.EverythingPermanent);
+        var r = Cleaner.Run([new(caches, caches.Items)], new Progress<CleanProgress>(seen.Add));
 
-        Assert.Equal(2048, r.Freed);
+        Assert.Equal(2048, r.Recycled);
+        Assert.Equal(0, r.Freed);
         Assert.NotEmpty(seen);
         var last = seen[^1];
         Assert.Equal(1, last.Fraction);
-        Assert.Equal(2048, last.FreedSoFar);
+        Assert.Equal(2048, last.RecycledSoFar);
         Assert.Equal(1, last.FilesSoFar);
         Assert.Contains(seen, p => p.CurrentItem == "cache");
     }
 
     [Fact]
-    public void PermanentModeDeletesDownloads()
+    public void BothRemovalModesRecycleDownloads()
     {
-        var download = MakeFile("old.msi", TimeSpan.FromDays(60));
-        var downloads = new CleanupCategory { Id = "downloads", Title = "Downloads", Description = "", Glyph = "", Safety = Safety.Review };
-        downloads.Items.Add(new CleanupItem { Name = "msi", Paths = [download], Size = 4096, IsFile = true });
+        RequireWindows();
+        // D-21: both remaining removal choices send everything to the Recycle Bin.
+        // There is no mode that deletes Downloads for good.
+        foreach (var mode in new[] { RemovalMode.ReviewToBin, RemovalMode.EverythingToBin })
+        {
+            var download = MakeFile($"old-{mode}.msi", TimeSpan.FromDays(60));
+            var downloads = new CleanupCategory { Id = "downloads", Title = "Downloads", Description = "", Glyph = "", Tier = SafetyLevel.CheckFirst };
+            downloads.Items.Add(new CleanupItem { Name = "msi", Paths = [download], Size = 4096, IsFile = true });
 
-        var r = Cleaner.Run([new(downloads, downloads.Items)], null, RemovalMode.EverythingPermanent);
+            var r = Cleaner.Run([new(downloads, downloads.Items)], null, mode);
 
-        Assert.Equal(0, r.Recycled);
-        Assert.Equal(4096, r.Freed);
-        Assert.False(File.Exists(download));
+            Assert.Equal(4096, r.Recycled);
+            Assert.Equal(0, r.Freed);
+            Assert.False(File.Exists(download));
+        }
     }
 
     // ---------- Phase 0 hang regressions (C1/C7) ----------

@@ -65,6 +65,9 @@ public static class WindowsFeatures
     /// <summary>
     /// Turns hibernation on or off through powercfg. When Purge for Windows isn't running as admin,
     /// Windows asks for approval first; saying no leaves everything unchanged.
+    /// P1-4: the wait has a 30-second timeout — a hung powercfg (or a UAC prompt
+    /// nobody answers) must never hang Settings forever. On timeout the process
+    /// is killed and the result reads Failed.
     /// </summary>
     public static async Task<(HibernationResult Result, string? Error)> SetHibernationAsync(bool enable)
     {
@@ -80,7 +83,16 @@ public static class WindowsFeatures
         {
             using var p = Process.Start(psi);
             if (p is null) return (HibernationResult.Failed, S.HibernateUnknown);
-            await p.WaitForExitAsync();
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            try
+            {
+                await p.WaitForExitAsync(timeout.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                try { p.Kill(entireProcessTree: true); } catch { }
+                return (HibernationResult.Failed, S.HibernateFailed + "powercfg did not finish in time.");
+            }
             return p.ExitCode == 0
                 ? (HibernationResult.Applied, null)
                 : (HibernationResult.Failed, S.HibernateFailed + $"powercfg exited with code {p.ExitCode}.");
@@ -98,8 +110,8 @@ public static class WindowsFeatures
 
     /// <summary>
     /// Clears the Delivery Optimization cache (contents only, with the same guards as a
-    /// cleanup). Needs admin: without it nothing is deleted and nothing is freed.
+    /// cleanup, including the safety-policy gate). Needs admin: without it nothing is deleted and nothing is freed.
     /// </summary>
     public static FileOps.DeleteResult ClearDeliveryOptimizationCache(CancellationToken ct = default) =>
-        FileOps.Delete(DeliveryOptimizationCache, null, ct);
+        FileOps.Delete(DeliveryOptimizationCache, null, ct, policy: DeletionSafetyPolicy.Default);
 }

@@ -1,35 +1,33 @@
 using PurgeWindows.Localization;
 namespace PurgeWindows.Core;
 
-public enum Safety { Safe, Review }
+// Safety tiers live in SafetyLevel.cs (SafetyLevel: Safe / CheckFirst / ReportOnly).
 
-/// <summary>Where cleaned files go. The default sends "your call" items to the Recycle Bin.</summary>
+/// <summary>Where cleaned files go. Every cleanable item goes to the Recycle Bin (D-21):
+/// both values behave identically today and are kept for settings compatibility.
+/// Permanent removal is never a setting; it only ever happens through an explicit
+/// per-item confirmation (Wave 4) or an owner tool run with consent.</summary>
 public enum RemovalMode
 {
-    /// <summary>"Your call" items go to the Recycle Bin; safe items are deleted directly.</summary>
+    /// <summary>Everything that can be recycled goes to the Recycle Bin.</summary>
     ReviewToBin,
     /// <summary>Everything that can be recycled goes to the Recycle Bin.</summary>
     EverythingToBin,
-    /// <summary>Everything is deleted directly, including "your call" items.</summary>
-    EverythingPermanent,
 }
 
 public static class RemovalPolicy
 {
-    /// <summary>True when this category's files go to the Recycle Bin under <paramref name="mode"/>.</summary>
-    public static bool GoesToBin(RemovalMode mode, CleanupCategory c) => mode switch
-    {
-        RemovalMode.EverythingToBin => c.Action == CleanAction.Delete,
-        RemovalMode.EverythingPermanent => false,
-        _ => c.Action == CleanAction.Delete && c.Safety == Safety.Review,
-    };
+    /// <summary>True when this category's files go to the Recycle Bin under <paramref name="mode"/>.
+    /// Always true for Delete categories: the Recycle Bin is the default (and only)
+    /// destination for cleaned files. ReportOnly/Steam/Settings categories never
+    /// reach the engine.</summary>
+    public static bool GoesToBin(RemovalMode mode, CleanupCategory c) => c.Action == CleanAction.Delete;
 }
 
 public enum CleanAction
 {
     /// <summary>Delete files (for folders: delete the contents, keep the folder).</summary>
     Delete,
-    EmptyRecycleBin,
     /// <summary>Hand off to Steam's own uninstaller.</summary>
     SteamUninstall,
     /// <summary>Only Windows can remove it safely, so we open Settings.</summary>
@@ -50,6 +48,11 @@ public sealed class CleanupItem
     /// <summary>Only files older than this are measured and deleted.</summary>
     public TimeSpan? MinAge { get; init; }
     public string? AppId { get; init; }
+    /// <summary>True when the paths were resolved by asking the owning tool where its
+    /// cache lives (npm, Go) and validated to stay inside the user profile. The
+    /// safety policy trusts such paths via <c>EvaluateToolResolved</c>; paths the
+    /// scanner hardcoded must be on the allowlist instead.</summary>
+    public bool ToolResolved { get; init; }
 }
 
 public sealed class CleanupCategory
@@ -58,7 +61,7 @@ public sealed class CleanupCategory
     public required string Title { get; init; }
     public required string Description { get; init; }
     public required string Glyph { get; init; }
-    public Safety Safety { get; init; } = Safety.Safe;
+    public SafetyLevel Tier { get; init; } = SafetyLevel.Safe;
     public CleanAction Action { get; init; } = CleanAction.Delete;
     public bool SelectedByDefault { get; init; }
     public bool ShowItems { get; init; } = true;
@@ -98,12 +101,11 @@ public static class Catalog
     {
         "recycle" => new CleanupCategory
         {
-            Id = id, Title = S.CatRecycle, Glyph = G.Delete,
+            Id = id, Title = S.CatRecycle, Glyph = G.Delete, Tier = SafetyLevel.ReportOnly,
             Description = S.CatRecycleDesc,
             // Review/open-only since the Phase 0 hang fix: Purge never empties the Trash,
             // and the bin-emptying shell call was an uninterruptible silent phase (C5). The bin is
-            // measured and shown; emptying it is Windows' job. Wave 3 owns the review/open
-            // UI completion for this category.
+            // measured and shown; emptying it is Windows' job.
             Action = CleanAction.ReportOnly, SelectedByDefault = false, ShowItems = false,
         },
         "temp" => new CleanupCategory
@@ -138,29 +140,29 @@ public static class Catalog
         },
         "windows" => new CleanupCategory
         {
-            Id = id, Title = S.CatWindows, Glyph = G.Update,
+            Id = id, Title = S.CatWindows, Glyph = G.Update, Tier = SafetyLevel.CheckFirst,
             Description = S.CatWindowsDesc,
             SelectedByDefault = true,
         },
         "installers" => new CleanupCategory
         {
-            Id = id, Title = S.CatInstallers, Glyph = G.Package, Safety = Safety.Review,
+            Id = id, Title = S.CatInstallers, Glyph = G.Package, Tier = SafetyLevel.CheckFirst,
             Description = S.CatInstallersDesc,
         },
         "downloads" => new CleanupCategory
         {
-            Id = id, Title = S.CatDownloads, Glyph = G.Download, Safety = Safety.Review,
+            Id = id, Title = S.CatDownloads, Glyph = G.Download, Tier = SafetyLevel.CheckFirst,
             Description = S.CatDownloadsDesc,
         },
         "games" => new CleanupCategory
         {
-            Id = id, Title = S.CatGames, Glyph = G.Game, Safety = Safety.Review,
+            Id = id, Title = S.CatGames, Glyph = G.Game, Tier = SafetyLevel.CheckFirst,
             Description = S.CatGamesDesc,
             Action = CleanAction.SteamUninstall,
         },
         "winold" => new CleanupCategory
         {
-            Id = id, Title = S.CatWinOld, Glyph = G.History, Safety = Safety.Review,
+            Id = id, Title = S.CatWinOld, Glyph = G.History, Tier = SafetyLevel.CheckFirst,
             Description = S.CatWinOldDesc,
             Action = CleanAction.OpenSettings, ShowItems = false,
         },
@@ -178,14 +180,40 @@ public static class Catalog
         },
         "devcaches" => new CleanupCategory
         {
-            Id = id, Title = S.CatDevCaches, Glyph = G.Package, Safety = Safety.Review,
+            Id = id, Title = S.CatDevCaches, Glyph = G.Package, Tier = SafetyLevel.CheckFirst,
             Description = S.CatDevCachesDesc,
         },
         "virtual" => new CleanupCategory
         {
-            Id = id, Title = S.CatVirtual, Glyph = G.Folder, Safety = Safety.Review,
+            Id = id, Title = S.CatVirtual, Glyph = G.Folder, Tier = SafetyLevel.ReportOnly,
             Description = S.CatVirtualDesc,
             Action = CleanAction.ReportOnly,
+        },
+        "diagnostics" => new CleanupCategory
+        {
+            Id = id, Title = S.CatDiagnostics, Glyph = G.Shield, Tier = SafetyLevel.ReportOnly,
+            Description = S.CatDiagnosticsDesc,
+            Action = CleanAction.ReportOnly,
+        },
+        "winlogs" => new CleanupCategory
+        {
+            Id = id, Title = S.CatWinLogs, Glyph = G.History, Tier = SafetyLevel.CheckFirst,
+            Description = S.CatWinLogsDesc,
+        },
+        "outlook" => new CleanupCategory
+        {
+            Id = id, Title = S.CatOutlook, Glyph = G.Document, Tier = SafetyLevel.CheckFirst,
+            Description = S.CatOutlookDesc,
+        },
+        "messaging" => new CleanupCategory
+        {
+            Id = id, Title = S.CatMessaging, Glyph = G.Apps, Tier = SafetyLevel.CheckFirst,
+            Description = S.CatMessagingDesc,
+        },
+        "captures" => new CleanupCategory
+        {
+            Id = id, Title = S.CatCaptures, Glyph = G.Game, Tier = SafetyLevel.CheckFirst,
+            Description = S.CatCapturesDesc,
         },
         _ => throw new ArgumentOutOfRangeException(nameof(id), id, S.UnknownCategory),
     };

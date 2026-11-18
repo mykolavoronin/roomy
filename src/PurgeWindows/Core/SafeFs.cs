@@ -8,6 +8,16 @@ namespace PurgeWindows.Core;
 /// Handle-based file system checks that can't be fooled by junctions or symlinks.
 /// A path is only trusted if Windows says the file really lives at that path, and deletes go
 /// through the same open handle that was checked, so swapping in a junction afterwards has no effect.
+/// <para/>
+/// WINDOWS-ONLY TODO (P1-1 benchmark): measure the per-file validation cost on a
+/// 100,000-file tree before changing anything further here. Exact procedure, on
+/// Windows: (1) build a tree of 100,000 files across 1,000 folders, 10 KiB each,
+/// under a temp folder; (2) time <c>FileOps.RecycleContents</c> over it with a
+/// counting progress sink and no UI, from a Release build; (3) time
+/// <c>FileOps.Delete</c> over an identical fresh tree; (4) record wall time,
+/// files/second, and the <see cref="TrustedPathFast"/> vs <see cref="TrustedPath"/>
+/// split by timing a run that calls <see cref="TrustedPath"/> directly.
+/// Report the numbers in the commit message; never claim them in a comment here.
 /// </summary>
 internal static class SafeFs
 {
@@ -79,6 +89,32 @@ internal static class SafeFs
         {
             var expected = LongPath(path);
             if (expected is null) return null;
+            using var h = Open(expected, forDelete: false);
+            if (h.IsInvalid) return null;
+            var real = FinalPath(h);
+            if (real is null || !string.Equals(Trim(real), Trim(expected), StringComparison.OrdinalIgnoreCase)) return null;
+            return (File.GetAttributes(expected) & FileAttributes.ReparsePoint) != 0 ? null : Trim(real);
+        }
+        catch { return null; }
+    }
+
+    /// <summary>
+    /// P1-1 per-file fast path, for paths produced by enumeration under an
+    /// already-trusted root. Enumeration yields long-form paths, so the
+    /// <c>GetLongPathNameW</c> call <see cref="TrustedPath"/> makes per file is
+    /// skipped — saving one syscall per file — unless any segment could be an
+    /// 8.3 short name (any '~' in the path), in which case the full check runs.
+    /// Junction safety is NOT weakened: the handle is still opened with
+    /// OPEN_REPARSE_POINT, the final path is still compared, and reparse entries
+    /// are still rejected. Only callers holding enumeration-produced paths may
+    /// use this; arbitrary user input always goes through <see cref="TrustedPath"/>.
+    /// </summary>
+    public static string? TrustedPathFast(string path)
+    {
+        if (path.IndexOf('~') >= 0) return TrustedPath(path);
+        try
+        {
+            var expected = Path.GetFullPath(path);
             using var h = Open(expected, forDelete: false);
             if (h.IsInvalid) return null;
             var real = FinalPath(h);

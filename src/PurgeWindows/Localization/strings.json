@@ -1208,14 +1208,6 @@
       "en": "Nothing is deleted directly. Space is only freed when you empty the Recycle Bin."
     },
     {
-      "key": "RemovalPermanent",
-      "en": "Everything is deleted permanently"
-    },
-    {
-      "key": "RemovalPermanentHint",
-      "en": "Space is freed right away. Nothing can be restored, so check your picks first."
-    },
-    {
       "key": "SelectionSplitBoth",
       "en": "{0} to the Recycle Bin · {1} deleted for good"
     },
@@ -1245,7 +1237,7 @@
     },
     {
       "key": "CatDevCachesDesc",
-      "en": "Downloaded packages and build outputs from Maven, Gradle, Cargo and Go. Your tools re-download and rebuild them, so the next build is slower and needs the network. Your projects and settings are untouched."
+      "en": "Downloaded packages, build outputs and editor caches from Maven, Gradle, Cargo, Go, NuGet and VS Code's C/C++ tools. Your tools re-download and rebuild them, so the next build is slower and needs the network. Your projects and settings are untouched."
     },
     {
       "key": "CatVirtual",
@@ -1514,6 +1506,214 @@
     {
       "key": "QuittingWhileCleaning",
       "en": "Stopping the cleanup so Purge for Windows can quit."
+    },
+    {
+      "key": "CatDiagnostics",
+      "en": "Windows diagnostic logs"
+    },
+    {
+      "key": "CatDiagnosticsDesc",
+      "en": "Sizes only. Servicing logs, diagnostic traces, event logs, the font cache and the Search index can only be cleared safely through Windows or their own tools, so Purge for Windows reports them and tells you where to act."
+    },
+    {
+      "key": "CatWinLogs",
+      "en": "Windows setup & server logs"
+    },
+    {
+      "key": "CatWinLogsDesc",
+      "en": "Windows setup logs, web server logs and Performance Monitor reports. Setup logs are the only record if an upgrade failed, so only clear them once Windows is running well."
+    },
+    {
+      "key": "CatOutlook",
+      "en": "Outlook offline data"
+    },
+    {
+      "key": "CatOutlookDesc",
+      "en": "Outlook's offline copies of your mailbox (.ost files). They rebuild from the server, but mail kept only on this PC does not come back — read the warning before deleting."
+    },
+    {
+      "key": "CatMessaging",
+      "en": "Messaging media"
+    },
+    {
+      "key": "CatMessagingDesc",
+      "en": "Photos, videos and files received in WhatsApp. They may be the only copy on this PC, so check inside WhatsApp before deleting."
+    },
+    {
+      "key": "CatCaptures",
+      "en": "Game captures"
+    },
+    {
+      "key": "CatCapturesDesc",
+      "en": "Clips and screenshots recorded with Game Bar. They are your videos and pictures, not cache — pick the ones you no longer want."
+    },
+    {
+      "key": "ItemBrowserCrashReports",
+      "en": "Browser crash reports"
+    },
+    {
+      "key": "ItemLegacyWebCache",
+      "en": "Legacy web cache"
+    },
+    {
+      "key": "ItemZoom",
+      "en": "Zoom"
+    },
+    {
+      "key": "ItemSignalLogs",
+      "en": "Signal logs"
+    },
+    {
+      "key": "ItemOutlookRoamCache",
+      "en": "Outlook settings cache"
+    },
+    {
+      "key": "ItemVsCodeInsiders",
+      "en": "VS Code Insiders"
+    },
+    {
+      "key": "ItemNuGetPackages",
+      "en": "NuGet global packages"
+    },
+    {
+      "key": "ItemCppCache",
+      "en": "VS Code C/C++ cache"
+    },
+    {
+      "key": "ItemSteamDepot",
+      "en": "Steam download cache"
+    },
+    {
+      "key": "ItemPanther",
+      "en": "Windows setup logs"
+    },
+    {
+      "key": "ItemIisLogs",
+      "en": "Web server (IIS) logs"
+    },
+    {
+      "key": "ItemPerfLogs",
+      "en": "Performance Monitor reports"
+    },
+    {
+      "key": "ItemCbsLogs",
+      "en": "Windows servicing logs"
+    },
+    {
+      "key": "ItemEtlLogs",
+      "en": "Diagnostic trace logs"
+    },
+    {
+      "key": "ItemEventLogs",
+      "en": "Windows event logs"
+    },
+    {
+      "key": "ItemFontCache",
+      "en": "Font cache"
+    },
+    {
+      "key": "ItemSearchIndex",
+      "en": "Windows Search index"
+    },
+    {
+      "key": "ItemWhatsApp",
+      "en": "WhatsApp media"
+    },
+    {
+      "key": "DockerItemDetail",
+      "en": "Prune unused images and build cache inside Docker first, then compact this disk. Never delete the file itself."
+    },
+    {
+      "key": "CbsLogsDetail",
+      "en": "Stop the Windows Modules Installer service first, then delete the contents. Never during an update."
+    },
+    {
+      "key": "EtlLogsDetail",
+      "en": "Delete in Settings → Privacy & security → Diagnostics & feedback → Delete diagnostic data."
+    },
+    {
+      "key": "EventLogsDetail",
+      "en": "Clear in Event Viewer, keeping the Security log. Clearing cannot be undone."
+    },
+    {
+      "key": "FontCacheDetail",
+      "en": "Repair-only: only clear if fonts look broken, after stopping the Font Cache service."
+    },
+    {
+      "key": "SearchIndexDetail",
+      "en": "Never delete the index file by hand. Rebuild in Indexing Options → Advanced → Rebuild."
+    },
+    {
+      "key": "DiagnosticsNote",
+      "en": "Purge for Windows only reports these sizes. Each item says where Windows itself can clear it — never delete these files by hand."
+    },
+    {
+      "key": "WinLogsNote",
+      "en": "Only clear setup logs once Windows is running well after an upgrade, and check Performance Monitor reports first — they are your own."
+    },
+    {
+      "key": "OutlookNote",
+      "en": "Before deleting an .ost file: check the Outbox for unsent mail and export any 'This computer only' folders — that mail is not on the server. Safer first steps: Compact Now in Outlook, or download less mail."
+    },
+    {
+      "key": "CapturedAgo",
+      "en": "Captured {0}"
+    },
+    {
+      "key": "FailNeedsAdmin",
+      "en": "This needs administrator rights to remove. Run Purge for Windows as administrator and try again."
+    },
+    {
+      "key": "FailNeedsAdminAccount",
+      "en": "This needs an administrator account. Sign in with an administrator account and try again."
+    },
+    {
+      "key": "FailInUse",
+      "en": "This file is in use by another program. Close the program and try again."
+    },
+    {
+      "key": "FailSystemProtected",
+      "en": "Windows protects this file, so it cannot be removed."
+    },
+    {
+      "key": "FailSafetySkipped",
+      "en": "This was skipped for safety — it may hold something you still need."
+    },
+    {
+      "key": "FailKeptForOtherApp",
+      "en": "This is shared with another app, so it was left alone."
+    },
+    {
+      "key": "FailBinDisabled",
+      "en": "The Recycle Bin is disabled for this drive, so files cannot be moved there."
+    },
+    {
+      "key": "FailBinFull",
+      "en": "The Recycle Bin is full. Empty some space in the bin and try again."
+    },
+    {
+      "key": "FailShellFailed",
+      "en": "Windows could not move this to the Recycle Bin."
+    },
+    {
+      "key": "FailOwnerToolFailed",
+      "en": "The app's own cleanup tool could not finish this."
+    },
+    {
+      "key": "FailMoveInExplorer",
+      "en": "This could not be moved. Try moving it in File Explorer."
+    },
+    {
+      "key": "FailUnknown",
+      "en": "This could not be removed for an unknown reason."
+    },
+    {
+      "key": "FailRetry",
+      "en": "Retry"
+    },
+    {
+      "key": "FailRetryAdmin",
+      "en": "Retry as administrator"
     }
   ]
 }

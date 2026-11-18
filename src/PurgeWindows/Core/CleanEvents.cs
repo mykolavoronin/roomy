@@ -16,6 +16,9 @@ public enum SkipReason
     TooNew,
     /// <summary>A protected location refused the operation.</summary>
     Protected,
+    /// <summary>The deletion safety policy refused the path (never-delete or not
+    /// allowlisted). The clean log carries the policy step that decided it.</summary>
+    PolicyRefused,
     /// <summary>The path goes through a junction, symlink, or mount point.</summary>
     LinkRejected,
     /// <summary>The file (or its batch) does not fit in the Recycle Bin's remaining capacity.</summary>
@@ -135,9 +138,27 @@ public sealed class CleanOptions
     public RecycleBinBudget? Budget { get; init; }
 
     /// <summary>Run dev tools' own clean commands where available (Go only, today) before
-    /// hand-deletion. Only applies to parts that delete permanently; recycled parts never
-    /// run owner commands, because owner tools delete for good. Default on.</summary>
+    /// hand-deletion. Owner commands delete for good, so they are a consented
+    /// permanent action: they run only for Check-First items when
+    /// <see cref="OwnerToolConsent"/> is set (Wave 4 sets it from the confirmation
+    /// dialog). Without consent, only the non-destructive pre-step runs. Default on.</summary>
     public bool UseOwnerTools { get; init; } = true;
+
+    /// <summary>
+    /// Explicit consent to run owner-tool clean commands (permanent deletion) for
+    /// Check-First items in this run. Default false: without it, owner commands
+    /// never run and every file goes to the Recycle Bin. Wave 4 sets this from the
+    /// confirmation dialog; nothing in Wave 3 sets it. Consent never applies to
+    /// Safe items — permanent removal is never Safe.
+    /// </summary>
+    public bool OwnerToolConsent { get; init; }
+
+    /// <summary>
+    /// The deletion safety policy gating this run. Null means the default policy:
+    /// every item path is evaluated before cleaning, and every file is re-checked
+    /// at delete time. Tests pass a policy built for their temp folder.
+    /// </summary>
+    public DeletionSafetyPolicy? Policy { get; init; }
 
     /// <summary>How long one owner-tool command may run before it is killed. Default 10 minutes:
     /// <c>go clean -modcache</c> on a huge module cache is legitimately slow.</summary>

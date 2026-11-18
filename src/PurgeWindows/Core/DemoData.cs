@@ -104,6 +104,26 @@ public static class DemoData
                 A("WSL2: Ubuntu-24.04", Gb(18.6), "Compact with wsl --manage --compact");
                 A("Docker Desktop disk", Gb(12.4), "Prune, then compact through Docker");
                 break;
+            case "diagnostics":
+                A("Windows servicing logs", Gb(4.18), "Stop the service first, then delete the contents");
+                A("Diagnostic trace logs", Gb(1.36), "Delete in Settings → Diagnostics & feedback");
+                A("Windows event logs", Mb(214), "Clear in Event Viewer, keeping the Security log");
+                break;
+            case "winlogs":
+                A("Windows setup logs", Mb(486), "1,204 files", files: 1204);
+                A("Web server (IIS) logs", Mb(96), "312 files", files: 312);
+                break;
+            case "outlook":
+                A("mailbox.ost", Gb(2.84), "", true, 1);
+                break;
+            case "messaging":
+                A("WhatsApp media", Gb(3.12), "1,847 files", files: 1847);
+                break;
+            case "captures":
+                A("ranked-clutch-4k.mp4", Gb(2.8), "Captured 3 months ago", true, 1);
+                A("boss-fight-no-damage.mp4", Gb(1.9), "Captured 5 months ago", true, 1);
+                A("Screenshot 2026-09-02.png", Mb(4.2), "Captured 2 months ago", true, 1);
+                break;
         }
         return c;
     }

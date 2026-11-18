@@ -1,0 +1,233 @@
+<!--
+  Purge design tokens, ported from purge/Theme/AppColors.swift + AppStyle.swift
+  (EXTRACTION.md §3, notes/02 §1). The ONLY file that may contain raw colour
+  literals: tools/token-lint.mjs fails the build on hex/rgb literals in any other
+  XAML file (legacy files are grandfathered until the shell wave migrates them).
+
+  The app is dark-only today, so the unprefixed resources carry the DARK values
+  (active) and each token also has a Light pair for the shell wave to wire to
+  theme switching. Font FILES are deferred (the shell wave acquires OFL fonts);
+  the family resources below carry the D-04 fallback stacks, so text renders
+  correctly with system fonts until then. Letter-spacing (tracking) has no WPF
+  equivalent and is intentionally not tokenized.
+-->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Text -->
+    <Color x:Key="PurgeTextPrimaryColor">#ECEAE6</Color>
+    <Color x:Key="PurgeTextPrimaryLightColor">#2E2D2B</Color>
+    <Color x:Key="PurgeTextSecondaryColor">#A6A39D</Color>
+    <Color x:Key="PurgeTextSecondaryLightColor">#64625E</Color>
+    <Color x:Key="PurgeTextTertiaryColor">#807D78</Color>
+    <Color x:Key="PurgeTextTertiaryLightColor">#85827C</Color>
+
+    <!-- Surfaces -->
+    <Color x:Key="PurgeSurfaceBaseColor">#171615</Color>
+    <Color x:Key="PurgeSurfaceBaseLightColor">#F6F5F3</Color>
+    <Color x:Key="PurgeSurfaceCardColor">#1E1D1C</Color>
+    <Color x:Key="PurgeSurfaceCardLightColor">#FFFFFF</Color>
+    <Color x:Key="PurgeSurfaceRaisedColor">#2B2A28</Color>
+    <Color x:Key="PurgeSurfaceRaisedLightColor">#FFFFFF</Color>
+    <Color x:Key="PurgeSurfaceCardHoverColor">#2A2927</Color>
+    <Color x:Key="PurgeSurfaceCardHoverLightColor">#F4F2EF</Color>
+
+    <!-- Fills -->
+    <Color x:Key="PurgeFillSecondaryColor">#282725</Color>
+    <Color x:Key="PurgeFillSecondaryLightColor">#EFEDEA</Color>
+    <Color x:Key="PurgeFillSecondaryHoverColor">#2F2E2C</Color>
+    <Color x:Key="PurgeFillSecondaryHoverLightColor">#E8E6E2</Color>
+    <Color x:Key="PurgeFillSecondaryPressedColor">#373533</Color>
+    <Color x:Key="PurgeFillSecondaryPressedLightColor">#DFDCD8</Color>
+
+    <!-- Borders -->
+    <Color x:Key="PurgeBorderSubtleColor">#302F2D</Color>
+    <Color x:Key="PurgeBorderSubtleLightColor">#E6E3DF</Color>
+    <Color x:Key="PurgeBorderStrongColor">#3D3B38</Color>
+    <Color x:Key="PurgeBorderStrongLightColor">#D5D2CD</Color>
+
+    <!-- Actions -->
+    <Color x:Key="PurgeActionPrimaryColor">#ECEAE6</Color>
+    <Color x:Key="PurgeActionPrimaryLightColor">#353431</Color>
+    <Color x:Key="PurgeActionPrimaryHoverColor">#F6F4F1</Color>
+    <Color x:Key="PurgeActionPrimaryHoverLightColor">#42403D</Color>
+    <Color x:Key="PurgeActionPrimaryPressedColor">#D8D5D0</Color>
+    <Color x:Key="PurgeActionPrimaryPressedLightColor">#2A2927</Color>
+    <Color x:Key="PurgeOnActionPrimaryColor">#171615</Color>
+    <Color x:Key="PurgeOnActionPrimaryLightColor">#FFFFFF</Color>
+    <Color x:Key="PurgeActionDestructiveColor">#D9372D</Color>
+    <Color x:Key="PurgeActionDestructiveLightColor">#D1312A</Color>
+    <Color x:Key="PurgeActionDestructiveHoverColor">#E2453B</Color>
+    <Color x:Key="PurgeActionDestructiveHoverLightColor">#BC2B25</Color>
+    <Color x:Key="PurgeActionDestructivePressedColor">#C4302A</Color>
+    <Color x:Key="PurgeActionDestructivePressedLightColor">#A92620</Color>
+
+    <!-- Status tones -->
+    <Color x:Key="PurgeStatusSafeTextColor">#5FD36B</Color>
+    <Color x:Key="PurgeStatusSafeTextLightColor">#1F7A35</Color>
+    <Color x:Key="PurgeStatusSafeFillColor">#1B2E22</Color>
+    <Color x:Key="PurgeStatusSafeFillLightColor">#E6F4EA</Color>
+    <Color x:Key="PurgeStatusCheckTextColor">#F2B84B</Color>
+    <Color x:Key="PurgeStatusCheckTextLightColor">#8A5300</Color>
+    <Color x:Key="PurgeStatusCheckFillColor">#332910</Color>
+    <Color x:Key="PurgeStatusCheckFillLightColor">#FAEEDA</Color>
+    <Color x:Key="PurgeStatusDangerTextColor">#F47468</Color>
+    <Color x:Key="PurgeStatusDangerTextLightColor">#B4302A</Color>
+    <Color x:Key="PurgeStatusDangerFillColor">#321B19</Color>
+    <Color x:Key="PurgeStatusDangerFillLightColor">#FBE8E5</Color>
+    <Color x:Key="PurgeStatusUnsureTextColor">#A9A6A0</Color>
+    <Color x:Key="PurgeStatusUnsureTextLightColor">#5A5853</Color>
+    <Color x:Key="PurgeStatusUnsureFillColor">#282725</Color>
+    <Color x:Key="PurgeStatusUnsureFillLightColor">#EFEDEA</Color>
+
+    <!-- Scrim + celebration -->
+    <Color x:Key="PurgeScrimColor">#61000000</Color>
+    <Color x:Key="PurgeScrimLightColor">#61000000</Color>
+    <Color x:Key="PurgeAccentCelebrateColor">#FFC70D</Color>
+    <Color x:Key="PurgeAccentCelebrateLightColor">#D18F00</Color>
+
+    <!-- Chart palette (Okabe-Ito) -->
+    <Color x:Key="PurgeChartAppCachesColor">#6CC3F0</Color>
+    <Color x:Key="PurgeChartAppCachesLightColor">#56B4E9</Color>
+    <Color x:Key="PurgeChartDevToolsColor">#3A94D0</Color>
+    <Color x:Key="PurgeChartDevToolsLightColor">#0072B2</Color>
+    <Color x:Key="PurgeChartLargeFilesColor">#F0B020</Color>
+    <Color x:Key="PurgeChartLargeFilesLightColor">#E69F00</Color>
+    <Color x:Key="PurgeChartAppsColor">#E8772A</Color>
+    <Color x:Key="PurgeChartAppsLightColor">#D55E00</Color>
+    <Color x:Key="PurgeChartLeftoversColor">#DA93BA</Color>
+    <Color x:Key="PurgeChartLeftoversLightColor">#CC79A7</Color>
+    <Color x:Key="PurgeChartAppCachesTileColor">#3A9BD5</Color>
+    <Color x:Key="PurgeChartAppCachesTileLightColor">#3399D3</Color>
+    <Color x:Key="PurgeChartDevToolsTileColor">#1E78BA</Color>
+    <Color x:Key="PurgeChartDevToolsTileLightColor">#0072B2</Color>
+    <Color x:Key="PurgeChartLeftoversTileColor">#BE6C9C</Color>
+    <Color x:Key="PurgeChartLeftoversTileLightColor">#B35A8D</Color>
+    <Color x:Key="PurgeChartEverythingElseColor">#A8A49D</Color>
+    <Color x:Key="PurgeChartEverythingElseLightColor">#8C8983</Color>
+    <Color x:Key="PurgeChartFreeSpaceColor">#4E4B47</Color>
+    <Color x:Key="PurgeChartFreeSpaceLightColor">#DAD7D2</Color>
+    <Color x:Key="PurgeChartPurgeableStripeColor">#7A7671</Color>
+    <Color x:Key="PurgeChartPurgeableStripeLightColor">#AEAAA4</Color>
+
+    <!-- Signal palette -->
+    <Color x:Key="PurgeSignalManagedInAppsColor">#5AA9E6</Color>
+    <Color x:Key="PurgeSignalManagedInAppsLightColor">#3E8FD3</Color>
+    <Color x:Key="PurgeSignalYourFilesColor">#E3B04B</Color>
+    <Color x:Key="PurgeSignalYourFilesLightColor">#D39B2F</Color>
+    <Color x:Key="PurgeSignalLeftAloneColor">#D9786A</Color>
+    <Color x:Key="PurgeSignalLeftAloneLightColor">#CC6655</Color>
+    <Color x:Key="PurgeSignalManagedByMacOSColor">#6E6B66</Color>
+    <Color x:Key="PurgeSignalManagedByMacOSLightColor">#8A8781</Color>
+    <Color x:Key="PurgeSignalBucketLabelColor">#171615</Color>
+    <Color x:Key="PurgeSignalBucketLabelLightColor">#171615</Color>
+    <Color x:Key="PurgeSignalManagedByMacOSLabelColor">#F4F2EE</Color>
+    <Color x:Key="PurgeSignalManagedByMacOSLabelLightColor">#171615</Color>
+
+    <!-- Brushes (active/dark set). Light brushes are the shell wave's theme work. -->
+    <SolidColorBrush x:Key="PurgeTextPrimaryBrush" Color="{StaticResource PurgeTextPrimaryColor}" />
+    <SolidColorBrush x:Key="PurgeTextSecondaryBrush" Color="{StaticResource PurgeTextSecondaryColor}" />
+    <SolidColorBrush x:Key="PurgeTextTertiaryBrush" Color="{StaticResource PurgeTextTertiaryColor}" />
+    <SolidColorBrush x:Key="PurgeSurfaceBaseBrush" Color="{StaticResource PurgeSurfaceBaseColor}" />
+    <SolidColorBrush x:Key="PurgeSurfaceCardBrush" Color="{StaticResource PurgeSurfaceCardColor}" />
+    <SolidColorBrush x:Key="PurgeSurfaceRaisedBrush" Color="{StaticResource PurgeSurfaceRaisedColor}" />
+    <SolidColorBrush x:Key="PurgeSurfaceCardHoverBrush" Color="{StaticResource PurgeSurfaceCardHoverColor}" />
+    <SolidColorBrush x:Key="PurgeFillSecondaryBrush" Color="{StaticResource PurgeFillSecondaryColor}" />
+    <SolidColorBrush x:Key="PurgeFillSecondaryHoverBrush" Color="{StaticResource PurgeFillSecondaryHoverColor}" />
+    <SolidColorBrush x:Key="PurgeFillSecondaryPressedBrush" Color="{StaticResource PurgeFillSecondaryPressedColor}" />
+    <SolidColorBrush x:Key="PurgeBorderSubtleBrush" Color="{StaticResource PurgeBorderSubtleColor}" />
+    <SolidColorBrush x:Key="PurgeBorderStrongBrush" Color="{StaticResource PurgeBorderStrongColor}" />
+    <SolidColorBrush x:Key="PurgeActionPrimaryBrush" Color="{StaticResource PurgeActionPrimaryColor}" />
+    <SolidColorBrush x:Key="PurgeActionPrimaryHoverBrush" Color="{StaticResource PurgeActionPrimaryHoverColor}" />
+    <SolidColorBrush x:Key="PurgeActionPrimaryPressedBrush" Color="{StaticResource PurgeActionPrimaryPressedColor}" />
+    <SolidColorBrush x:Key="PurgeOnActionPrimaryBrush" Color="{StaticResource PurgeOnActionPrimaryColor}" />
+    <SolidColorBrush x:Key="PurgeActionDestructiveBrush" Color="{StaticResource PurgeActionDestructiveColor}" />
+    <SolidColorBrush x:Key="PurgeActionDestructiveHoverBrush" Color="{StaticResource PurgeActionDestructiveHoverColor}" />
+    <SolidColorBrush x:Key="PurgeActionDestructivePressedBrush" Color="{StaticResource PurgeActionDestructivePressedColor}" />
+    <SolidColorBrush x:Key="PurgeStatusSafeTextBrush" Color="{StaticResource PurgeStatusSafeTextColor}" />
+    <SolidColorBrush x:Key="PurgeStatusSafeFillBrush" Color="{StaticResource PurgeStatusSafeFillColor}" />
+    <SolidColorBrush x:Key="PurgeStatusCheckTextBrush" Color="{StaticResource PurgeStatusCheckTextColor}" />
+    <SolidColorBrush x:Key="PurgeStatusCheckFillBrush" Color="{StaticResource PurgeStatusCheckFillColor}" />
+    <SolidColorBrush x:Key="PurgeStatusDangerTextBrush" Color="{StaticResource PurgeStatusDangerTextColor}" />
+    <SolidColorBrush x:Key="PurgeStatusDangerFillBrush" Color="{StaticResource PurgeStatusDangerFillColor}" />
+    <SolidColorBrush x:Key="PurgeStatusUnsureTextBrush" Color="{StaticResource PurgeStatusUnsureTextColor}" />
+    <SolidColorBrush x:Key="PurgeStatusUnsureFillBrush" Color="{StaticResource PurgeStatusUnsureFillColor}" />
+    <SolidColorBrush x:Key="PurgeScrimBrush" Color="{StaticResource PurgeScrimColor}" />
+    <SolidColorBrush x:Key="PurgeAccentCelebrateBrush" Color="{StaticResource PurgeAccentCelebrateColor}" />
+    <SolidColorBrush x:Key="PurgeChartAppCachesBrush" Color="{StaticResource PurgeChartAppCachesColor}" />
+    <SolidColorBrush x:Key="PurgeChartDevToolsBrush" Color="{StaticResource PurgeChartDevToolsColor}" />
+    <SolidColorBrush x:Key="PurgeChartLargeFilesBrush" Color="{StaticResource PurgeChartLargeFilesColor}" />
+    <SolidColorBrush x:Key="PurgeChartAppsBrush" Color="{StaticResource PurgeChartAppsColor}" />
+    <SolidColorBrush x:Key="PurgeChartLeftoversBrush" Color="{StaticResource PurgeChartLeftoversColor}" />
+    <SolidColorBrush x:Key="PurgeChartAppCachesTileBrush" Color="{StaticResource PurgeChartAppCachesTileColor}" />
+    <SolidColorBrush x:Key="PurgeChartDevToolsTileBrush" Color="{StaticResource PurgeChartDevToolsTileColor}" />
+    <SolidColorBrush x:Key="PurgeChartLeftoversTileBrush" Color="{StaticResource PurgeChartLeftoversTileColor}" />
+    <SolidColorBrush x:Key="PurgeChartEverythingElseBrush" Color="{StaticResource PurgeChartEverythingElseColor}" />
+    <SolidColorBrush x:Key="PurgeChartFreeSpaceBrush" Color="{StaticResource PurgeChartFreeSpaceColor}" />
+    <SolidColorBrush x:Key="PurgeChartPurgeableStripeBrush" Color="{StaticResource PurgeChartPurgeableStripeColor}" />
+    <SolidColorBrush x:Key="PurgeSignalManagedInAppsBrush" Color="{StaticResource PurgeSignalManagedInAppsColor}" />
+    <SolidColorBrush x:Key="PurgeSignalYourFilesBrush" Color="{StaticResource PurgeSignalYourFilesColor}" />
+    <SolidColorBrush x:Key="PurgeSignalLeftAloneBrush" Color="{StaticResource PurgeSignalLeftAloneColor}" />
+    <SolidColorBrush x:Key="PurgeSignalManagedByMacOSBrush" Color="{StaticResource PurgeSignalManagedByMacOSColor}" />
+    <SolidColorBrush x:Key="PurgeSignalBucketLabelBrush" Color="{StaticResource PurgeSignalBucketLabelColor}" />
+    <SolidColorBrush x:Key="PurgeSignalManagedByMacOSLabelBrush" Color="{StaticResource PurgeSignalManagedByMacOSLabelColor}" />
+
+    <!-- Font families (D-04 fallback stacks; font files deferred to the shell wave) -->
+    <FontFamily x:Key="PurgeFontText">Onest, Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="PurgeFontFigures">Nunito, Segoe UI Variable Display, Segoe UI, Onest</FontFamily>
+    <FontFamily x:Key="PurgeFontMono">Consolas, Cascadia Mono, Courier New</FontFamily>
+
+    <!-- Type scale (sizes; weights ride with the styles that use them) -->
+    <x:Double x:Key="PurgeFontSizeDisplay">56</x:Double>
+    <x:Double x:Key="PurgeFontSizeDisplaySmall">36</x:Double>
+    <x:Double x:Key="PurgeFontSizeTitle">26</x:Double>
+    <x:Double x:Key="PurgeFontSizePageTitle">20</x:Double>
+    <x:Double x:Key="PurgeFontSizeSectionTitle">15</x:Double>
+    <x:Double x:Key="PurgeFontSizeHeadline">13</x:Double>
+    <x:Double x:Key="PurgeFontSizeBody">13</x:Double>
+    <x:Double x:Key="PurgeFontSizeRowTitle">13</x:Double>
+    <x:Double x:Key="PurgeFontSizeCallout">12</x:Double>
+    <x:Double x:Key="PurgeFontSizeMetadata">11</x:Double>
+    <x:Double x:Key="PurgeFontSizeMicro">10</x:Double>
+    <x:Double x:Key="PurgeFontSizeIconLabel">8</x:Double>
+
+    <!-- Spacing -->
+    <x:Double x:Key="PurgeSpacingXxxSmall">2</x:Double>
+    <x:Double x:Key="PurgeSpacingXxSmall">4</x:Double>
+    <x:Double x:Key="PurgeSpacingXxSmallPlus">6</x:Double>
+    <x:Double x:Key="PurgeSpacingXSmall">8</x:Double>
+    <x:Double x:Key="PurgeSpacingSmall">12</x:Double>
+    <x:Double x:Key="PurgeSpacingMedium">16</x:Double>
+    <x:Double x:Key="PurgeSpacingLarge">24</x:Double>
+    <x:Double x:Key="PurgeSpacingXLarge">32</x:Double>
+
+    <!-- Radii (continuous in SwiftUI; uniform corners here). Buttons/chips are capsules. -->
+    <CornerRadius x:Key="PurgeRadiusXs">4</CornerRadius>
+    <CornerRadius x:Key="PurgeRadiusSm">6</CornerRadius>
+    <CornerRadius x:Key="PurgeRadiusMd">8</CornerRadius>
+    <CornerRadius x:Key="PurgeRadiusLg">14</CornerRadius>
+    <CornerRadius x:Key="PurgeRadiusXl">18</CornerRadius>
+
+    <!-- Borders -->
+    <Thickness x:Key="PurgeBorderHairline">0.5</Thickness>
+    <Thickness x:Key="PurgeBorderRegular">1</Thickness>
+
+    <!-- Shadows: only three in the whole app. Direction/depth translate the SwiftUI offsets. -->
+    <!-- Onboarding icon: black @ 0.15, radius 15, offset (-8, 8). -->
+    <DropShadowEffect x:Key="PurgeShadowOnboardingIcon" Color="Black" Opacity="0.15" BlurRadius="15" ShadowDepth="11.3" Direction="135" />
+    <!-- Overview tiles: black @ 0.18, radius 0.5, y-offset 0.5. -->
+    <DropShadowEffect x:Key="PurgeShadowOverviewTile" Color="Black" Opacity="0.18" BlurRadius="0.5" ShadowDepth="0.5" Direction="90" />
+    <!-- Uninstall fan icons: black @ 0.35, radius 3, y-offset 1.5. -->
+    <DropShadowEffect x:Key="PurgeShadowFanIcon" Color="Black" Opacity="0.35" BlurRadius="3" ShadowDepth="1.5" Direction="90" />
+
+    <!-- Materials: macOS vibrancy has no hex equivalent. Ultra-thin is approximated
+         as the base surface at the documented 0.55 opacity cap; regular material and
+         true Mica/acrylic equivalents are the shell wave's job. -->
+    <SolidColorBrush x:Key="PurgeMaterialUltraThinBrush" Color="{StaticResource PurgeSurfaceBaseColor}" Opacity="0.55" />
+
+    <!-- Opacity constants -->
+    <x:Double x:Key="PurgeOpacityDisabled">0.45</x:Double>
+    <x:Double x:Key="PurgeOpacityDimmed">0.5</x:Double>
+    <x:Double x:Key="PurgeOpacityBadgeOutline">0.22</x:Double>
+</ResourceDictionary>

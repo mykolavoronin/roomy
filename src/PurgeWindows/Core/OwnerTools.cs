@@ -54,8 +54,14 @@ public sealed record OwnerToolResult(
 /// <c>mvn</c>/<c>cargo</c> invocations here would be unsafe; if a future wave verifies a
 /// real owner command for either, add it to <see cref="Match"/>.
 /// <para/>
-/// Owner commands delete for good — they never recycle. The cleaner therefore runs them
-/// only for parts that delete permanently anyway; recycled parts run the pre-step at most.
+/// OWNER-TOOL RULE (D-21): owner commands delete for good — they never recycle.
+/// They are a consented permanent action, allowed ONLY for Check-First items
+/// after explicit confirmation: the cleaner runs them only when
+/// <see cref="CleanOptions.OwnerToolConsent"/> is set AND the part's tier is
+/// Check-First (Wave 4 sets consent from the confirmation dialog; nothing else
+/// may). Without consent, only the non-destructive pre-step runs, and every file
+/// goes to the Recycle Bin. Consent never applies to Safe items — permanent
+/// removal is never Safe.
 /// Every command runs with a timeout, bounded output capture, cancellation-linked kill,
 /// and a failure taxonomy that checks the exit code, the output, AND the measured
 /// before/after size. Execution is synchronous polling on the worker thread (never a

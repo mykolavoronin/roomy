@@ -742,12 +742,6 @@ public static class S
     /// <summary>Nothing is deleted directly. Space is only freed when you empty the Recycle Bin.</summary>
     public static string RemovalBinHint => Loc.Get("RemovalBinHint");
 
-    /// <summary>Everything is deleted permanently</summary>
-    public static string RemovalPermanent => Loc.Get("RemovalPermanent");
-
-    /// <summary>Space is freed right away. Nothing can be restored, so check your picks first.</summary>
-    public static string RemovalPermanentHint => Loc.Get("RemovalPermanentHint");
-
     /// <summary>{0} to the Recycle Bin · {1} deleted for good</summary>
     public static string SelectionSplitBoth => Loc.Get("SelectionSplitBoth");
 
@@ -769,7 +763,7 @@ public static class S
     /// <summary>Developer caches</summary>
     public static string CatDevCaches => Loc.Get("CatDevCaches");
 
-    /// <summary>Downloaded packages and build outputs from Maven, Gradle, Cargo and Go. Your tools re-download and rebuild them, so the next build is slower and needs the network. Your projects and settings are untouched.</summary>
+    /// <summary>Downloaded packages, build outputs and editor caches from Maven, Gradle, Cargo, Go, NuGet and VS Code's C/C++ tools. Your tools re-download and rebuild them, so the next build is slower and needs the network. Your projects and settings are untouched.</summary>
     public static string CatDevCachesDesc => Loc.Get("CatDevCachesDesc");
 
     /// <summary>Virtual machines &amp; emulators</summary>
@@ -972,4 +966,160 @@ public static class S
 
     /// <summary>Stopping the cleanup so Purge for Windows can quit.</summary>
     public static string QuittingWhileCleaning => Loc.Get("QuittingWhileCleaning");
+
+    /// <summary>Windows diagnostic logs</summary>
+    public static string CatDiagnostics => Loc.Get("CatDiagnostics");
+
+    /// <summary>Sizes only. Servicing logs, diagnostic traces, event logs, the font cache and the Search index can only be cleared safely through Windows or their own tools, so Purge for Windows reports them and tells you where to act.</summary>
+    public static string CatDiagnosticsDesc => Loc.Get("CatDiagnosticsDesc");
+
+    /// <summary>Windows setup &amp; server logs</summary>
+    public static string CatWinLogs => Loc.Get("CatWinLogs");
+
+    /// <summary>Windows setup logs, web server logs and Performance Monitor reports. Setup logs are the only record if an upgrade failed, so only clear them once Windows is running well.</summary>
+    public static string CatWinLogsDesc => Loc.Get("CatWinLogsDesc");
+
+    /// <summary>Outlook offline data</summary>
+    public static string CatOutlook => Loc.Get("CatOutlook");
+
+    /// <summary>Outlook's offline copies of your mailbox (.ost files). They rebuild from the server, but mail kept only on this PC does not come back — read the warning before deleting.</summary>
+    public static string CatOutlookDesc => Loc.Get("CatOutlookDesc");
+
+    /// <summary>Messaging media</summary>
+    public static string CatMessaging => Loc.Get("CatMessaging");
+
+    /// <summary>Photos, videos and files received in WhatsApp. They may be the only copy on this PC, so check inside WhatsApp before deleting.</summary>
+    public static string CatMessagingDesc => Loc.Get("CatMessagingDesc");
+
+    /// <summary>Game captures</summary>
+    public static string CatCaptures => Loc.Get("CatCaptures");
+
+    /// <summary>Clips and screenshots recorded with Game Bar. They are your videos and pictures, not cache — pick the ones you no longer want.</summary>
+    public static string CatCapturesDesc => Loc.Get("CatCapturesDesc");
+
+    /// <summary>Browser crash reports</summary>
+    public static string ItemBrowserCrashReports => Loc.Get("ItemBrowserCrashReports");
+
+    /// <summary>Legacy web cache</summary>
+    public static string ItemLegacyWebCache => Loc.Get("ItemLegacyWebCache");
+
+    /// <summary>Zoom</summary>
+    public static string ItemZoom => Loc.Get("ItemZoom");
+
+    /// <summary>Signal logs</summary>
+    public static string ItemSignalLogs => Loc.Get("ItemSignalLogs");
+
+    /// <summary>Outlook settings cache</summary>
+    public static string ItemOutlookRoamCache => Loc.Get("ItemOutlookRoamCache");
+
+    /// <summary>VS Code Insiders</summary>
+    public static string ItemVsCodeInsiders => Loc.Get("ItemVsCodeInsiders");
+
+    /// <summary>NuGet global packages</summary>
+    public static string ItemNuGetPackages => Loc.Get("ItemNuGetPackages");
+
+    /// <summary>VS Code C/C++ cache</summary>
+    public static string ItemCppCache => Loc.Get("ItemCppCache");
+
+    /// <summary>Steam download cache</summary>
+    public static string ItemSteamDepot => Loc.Get("ItemSteamDepot");
+
+    /// <summary>Windows setup logs</summary>
+    public static string ItemPanther => Loc.Get("ItemPanther");
+
+    /// <summary>Web server (IIS) logs</summary>
+    public static string ItemIisLogs => Loc.Get("ItemIisLogs");
+
+    /// <summary>Performance Monitor reports</summary>
+    public static string ItemPerfLogs => Loc.Get("ItemPerfLogs");
+
+    /// <summary>Windows servicing logs</summary>
+    public static string ItemCbsLogs => Loc.Get("ItemCbsLogs");
+
+    /// <summary>Diagnostic trace logs</summary>
+    public static string ItemEtlLogs => Loc.Get("ItemEtlLogs");
+
+    /// <summary>Windows event logs</summary>
+    public static string ItemEventLogs => Loc.Get("ItemEventLogs");
+
+    /// <summary>Font cache</summary>
+    public static string ItemFontCache => Loc.Get("ItemFontCache");
+
+    /// <summary>Windows Search index</summary>
+    public static string ItemSearchIndex => Loc.Get("ItemSearchIndex");
+
+    /// <summary>WhatsApp media</summary>
+    public static string ItemWhatsApp => Loc.Get("ItemWhatsApp");
+
+    /// <summary>Prune unused images and build cache inside Docker first, then compact this disk. Never delete the file itself.</summary>
+    public static string DockerItemDetail => Loc.Get("DockerItemDetail");
+
+    /// <summary>Stop the Windows Modules Installer service first, then delete the contents. Never during an update.</summary>
+    public static string CbsLogsDetail => Loc.Get("CbsLogsDetail");
+
+    /// <summary>Delete in Settings → Privacy &amp; security → Diagnostics &amp; feedback → Delete diagnostic data.</summary>
+    public static string EtlLogsDetail => Loc.Get("EtlLogsDetail");
+
+    /// <summary>Clear in Event Viewer, keeping the Security log. Clearing cannot be undone.</summary>
+    public static string EventLogsDetail => Loc.Get("EventLogsDetail");
+
+    /// <summary>Repair-only: only clear if fonts look broken, after stopping the Font Cache service.</summary>
+    public static string FontCacheDetail => Loc.Get("FontCacheDetail");
+
+    /// <summary>Never delete the index file by hand. Rebuild in Indexing Options → Advanced → Rebuild.</summary>
+    public static string SearchIndexDetail => Loc.Get("SearchIndexDetail");
+
+    /// <summary>Purge for Windows only reports these sizes. Each item says where Windows itself can clear it — never delete these files by hand.</summary>
+    public static string DiagnosticsNote => Loc.Get("DiagnosticsNote");
+
+    /// <summary>Only clear setup logs once Windows is running well after an upgrade, and check Performance Monitor reports first — they are your own.</summary>
+    public static string WinLogsNote => Loc.Get("WinLogsNote");
+
+    /// <summary>Before deleting an .ost file: check the Outbox for unsent mail and export any 'This computer only' folders — that mail is not on the server. Safer first steps: Compact Now in Outlook, or download less mail.</summary>
+    public static string OutlookNote => Loc.Get("OutlookNote");
+
+    /// <summary>Captured {0}</summary>
+    public static string CapturedAgo => Loc.Get("CapturedAgo");
+
+    /// <summary>This needs administrator rights to remove. Run Purge for Windows as administrator and try again.</summary>
+    public static string FailNeedsAdmin => Loc.Get("FailNeedsAdmin");
+
+    /// <summary>This needs an administrator account. Sign in with an administrator account and try again.</summary>
+    public static string FailNeedsAdminAccount => Loc.Get("FailNeedsAdminAccount");
+
+    /// <summary>This file is in use by another program. Close the program and try again.</summary>
+    public static string FailInUse => Loc.Get("FailInUse");
+
+    /// <summary>Windows protects this file, so it cannot be removed.</summary>
+    public static string FailSystemProtected => Loc.Get("FailSystemProtected");
+
+    /// <summary>This was skipped for safety — it may hold something you still need.</summary>
+    public static string FailSafetySkipped => Loc.Get("FailSafetySkipped");
+
+    /// <summary>This is shared with another app, so it was left alone.</summary>
+    public static string FailKeptForOtherApp => Loc.Get("FailKeptForOtherApp");
+
+    /// <summary>The Recycle Bin is disabled for this drive, so files cannot be moved there.</summary>
+    public static string FailBinDisabled => Loc.Get("FailBinDisabled");
+
+    /// <summary>The Recycle Bin is full. Empty some space in the bin and try again.</summary>
+    public static string FailBinFull => Loc.Get("FailBinFull");
+
+    /// <summary>Windows could not move this to the Recycle Bin.</summary>
+    public static string FailShellFailed => Loc.Get("FailShellFailed");
+
+    /// <summary>The app's own cleanup tool could not finish this.</summary>
+    public static string FailOwnerToolFailed => Loc.Get("FailOwnerToolFailed");
+
+    /// <summary>This could not be moved. Try moving it in File Explorer.</summary>
+    public static string FailMoveInExplorer => Loc.Get("FailMoveInExplorer");
+
+    /// <summary>This could not be removed for an unknown reason.</summary>
+    public static string FailUnknown => Loc.Get("FailUnknown");
+
+    /// <summary>Retry</summary>
+    public static string FailRetry => Loc.Get("FailRetry");
+
+    /// <summary>Retry as administrator</summary>
+    public static string FailRetryAdmin => Loc.Get("FailRetryAdmin");
 }

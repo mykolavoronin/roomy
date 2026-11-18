@@ -30,7 +30,6 @@ public partial class SettingsWindow : Window
         WeeklyCheck.IsChecked = p.WeeklyChecks;
         RemovalDefaultRadio.IsChecked = p.Removal == RemovalMode.ReviewToBin;
         RemovalBinRadio.IsChecked = p.Removal == RemovalMode.EverythingToBin;
-        RemovalPermanentRadio.IsChecked = p.Removal == RemovalMode.EverythingPermanent;
         ThresholdBox.Text = p.LowSpaceGB.ToString(CultureInfo.InvariantCulture);
         IntervalBox.SelectedValue = p.CheckEveryMinutes.ToString(CultureInfo.InvariantCulture);
         _snoozedUntil = p.SnoozedUntil;
@@ -142,7 +141,6 @@ public partial class SettingsWindow : Window
                 LowSpaceAlerts = LowSpaceCheck.IsChecked == true,
                 WeeklyChecks = WeeklyCheck.IsChecked == true,
                 Removal = RemovalBinRadio.IsChecked == true ? RemovalMode.EverythingToBin
-                    : RemovalPermanentRadio.IsChecked == true ? RemovalMode.EverythingPermanent
                     : RemovalMode.ReviewToBin,
                 LowSpaceGB = threshold,
                 CheckEveryMinutes = IntervalBox.SelectedValue as string == "60" ? 60 : 30,

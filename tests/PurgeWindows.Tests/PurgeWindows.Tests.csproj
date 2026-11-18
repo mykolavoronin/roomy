@@ -28,7 +28,16 @@
     <Compile Include="../../src/PurgeWindows/Core/CleanEvents.cs" Link="Core/CleanEvents.cs" />
     <Compile Include="../../src/PurgeWindows/Core/CleanLog.cs" Link="Core/CleanLog.cs" />
     <Compile Include="../../src/PurgeWindows/Core/CleanWatchdog.cs" Link="Core/CleanWatchdog.cs" />
-    <Compile Include="../../src/PurgeWindows/Core/RecycleBinCapacity.cs" Link="Core/RecycleBinCapacity.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/VolumeCapacity.cs" Link="Core/VolumeCapacity.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/SafetyLevel.cs" Link="Core/SafetyLevel.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/DeletionSafetyPolicy.cs" Link="Core/DeletionSafetyPolicy.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/CategoryCatalog.cs" Link="Core/CategoryCatalog.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/ExplanationResolver.cs" Link="Core/ExplanationResolver.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/ScanQueue.cs" Link="Core/ScanQueue.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/ScanCoalescer.cs" Link="Core/ScanCoalescer.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/ConfirmGate.cs" Link="Core/ConfirmGate.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/CleanFailure.cs" Link="Core/CleanFailure.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/CleanOutcome.cs" Link="Core/CleanOutcome.cs" />
     <Compile Include="../../src/PurgeWindows/Core/OwnerTools.cs" Link="Core/OwnerTools.cs" />
     <Compile Include="../../src/PurgeWindows/Core/Scanner.cs" Link="Core/Scanner.cs" />
     <Compile Include="../../src/PurgeWindows/Core/Steam.cs" Link="Core/Steam.cs" />
@@ -39,7 +48,12 @@
     <EmbeddedResource Include="../../src/PurgeWindows/Localization/Strings.resx" Link="Localization/Strings.resx">
       <LogicalName>PurgeWindows.Localization.Strings.resources</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="../../src/PurgeWindows/Resources/explanations.windows.json" Link="Resources/explanations.windows.json">
+      <LogicalName>PurgeWindows.Resources.explanations.windows.json</LogicalName>
+    </EmbeddedResource>
     <Compile Include="../../src/PurgeWindows/Services/SingleInstance.cs" Link="Services/SingleInstance.cs" />
+    <Compile Include="../../src/PurgeWindows/Services/CleanupHistoryStore.cs" Link="Services/CleanupHistoryStore.cs" />
+    <Compile Include="../../src/PurgeWindows/Services/CleanupLedgerStore.cs" Link="Services/CleanupLedgerStore.cs" />
     <Compile Include="../../src/PurgeWindows/Services/NotificationService.cs" Link="Services/NotificationService.cs" />
     <Compile Include="../../src/PurgeWindows/Services/StartupRegistration.cs" Link="Services/StartupRegistration.cs" />
   </ItemGroup>

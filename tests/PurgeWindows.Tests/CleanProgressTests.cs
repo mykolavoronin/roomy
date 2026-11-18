@@ -189,9 +189,10 @@ public sealed class CleanProgressTests : IDisposable
         var b = JobCategory("b", ("temp", Missing("temp-b"), 2000));
         var progress = new SyncProgress();
 
-        var r = Cleaner.Run([new(a, a.Items), new(b, b.Items)], progress, RemovalMode.EverythingPermanent);
+        var r = Cleaner.Run([new(a, a.Items), new(b, b.Items)], progress);
 
         Assert.Equal(0, r.Freed);
+        Assert.Equal(0, r.Recycled);
         Assert.Equal(3000, r.Skipped);
         Assert.Equal(2, r.Categories!.Count);
         var done = progress.Seen.Where(p => p.PartDone).ToList();
@@ -210,7 +211,7 @@ public sealed class CleanProgressTests : IDisposable
         var a = JobCategory("a", ("cache", Missing("cache-a"), 1000));
         var progress = new SyncProgress();
 
-        var r = Cleaner.Run([new(vm, vm.Items), new(a, a.Items)], progress, RemovalMode.EverythingPermanent);
+        var r = Cleaner.Run([new(vm, vm.Items), new(a, a.Items)], progress);
 
         Assert.Single(r.Categories!);
         Assert.DoesNotContain(progress.Seen, p => p.CategoryId == "virtual");
@@ -225,10 +226,11 @@ public sealed class CleanProgressTests : IDisposable
         bin.Items.Add(new CleanupItem { Name = "Recycle Bin", Paths = ["shell:RecycleBinFolder"], Size = 1234 });
         var progress = new SyncProgress();
 
-        var r = Cleaner.Run([new(bin, bin.Items)], progress, RemovalMode.EverythingPermanent);
+        var r = Cleaner.Run([new(bin, bin.Items)], progress);
 
         Assert.Empty(r.Categories ?? []);
         Assert.Equal(0, r.Freed);
+        Assert.Equal(0, r.Recycled);
         Assert.DoesNotContain(progress.Seen, p => p.CategoryId == "recycle");
     }
 
@@ -249,7 +251,7 @@ public sealed class CleanProgressTests : IDisposable
         };
 
         var ex = Assert.Throws<CleanCancelledException>(() =>
-            Cleaner.Run([new(a, a.Items), new(b, b.Items)], progress, RemovalMode.EverythingPermanent, cts.Token));
+            Cleaner.Run([new(a, a.Items), new(b, b.Items)], progress, ct: cts.Token));
 
         Assert.IsAssignableFrom<OperationCanceledException>(ex);
         Assert.Equal(2, ex.Partial.Categories!.Count);
@@ -257,6 +259,7 @@ public sealed class CleanProgressTests : IDisposable
         // never started, so its bytes are neither freed nor skipped.
         Assert.Equal(2000, ex.Partial.Skipped);
         Assert.Equal(0, ex.Partial.Freed);
+        Assert.Equal(0, ex.Partial.Recycled);
         Assert.Contains(progress.Seen, p => p is { Cancelled: true, CategoryId: "b" });
     }
 
@@ -276,7 +279,7 @@ public sealed class CleanProgressTests : IDisposable
             },
         };
 
-        var r = Cleaner.Run([new(a, a.Items), new(b, b.Items)], progress, RemovalMode.EverythingPermanent);
+        var r = Cleaner.Run([new(a, a.Items), new(b, b.Items)], progress);
 
         Assert.Equal(2, r.Categories!.Count);
         Assert.Equal(2, progress.Seen.Count(p => p.PartDone));
@@ -311,9 +314,10 @@ public sealed class CleanProgressTests : IDisposable
             Name = "fresh", Paths = [dir], Size = 512, MinAge = TimeSpan.FromDays(7),
         };
 
-        var r = Cleaner.Run([new(cat, cat.Items)], null, RemovalMode.EverythingPermanent);
+        var r = Cleaner.Run([new(cat, cat.Items)], null);
 
         Assert.Equal(0, r.Freed);
+        Assert.Equal(0, r.Recycled);
         Assert.Equal(1, r.SkipReasons![SkipReason.TooNew]);
         Assert.True(File.Exists(fresh));
     }

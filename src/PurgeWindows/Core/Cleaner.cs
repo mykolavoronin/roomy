@@ -34,9 +34,32 @@ public sealed record CleanProgress(
 
 /// <param name="Recycled">Bytes moved to the Recycle Bin. They are not counted in <paramref name="Freed"/>.</param>
 /// <param name="SkipReasons">Skipped-file counts by fixed reason, aggregated over the run.</param>
+/// <param name="Failed">Files attempted but still there (in use, locked, shell failures).</param>
 public sealed record CleanResult(long Freed, long Skipped, int Files, long Recycled = 0,
     IReadOnlyList<CategoryCleanResult>? Categories = null,
-    IReadOnlyDictionary<SkipReason, int>? SkipReasons = null);
+    IReadOnlyDictionary<SkipReason, int>? SkipReasons = null,
+    int Failed = 0)
+{
+    /// <summary>
+    /// The run's outcome, resolved from counts the way <see cref="CleanOutcomes.Resolve"/>
+    /// resolves from a failure list: removed files with no failures → Success;
+    /// removed with failures → Partial; nothing removed with failures → Failed;
+    /// nothing removed, nothing failed, but policy refusals → SkippedOnly;
+    /// otherwise NothingLeft. Skips for other reasons (too-new files, capacity)
+    /// never downgrade a run that removed files.
+    /// </summary>
+    public CleanOutcome Outcome
+    {
+        get
+        {
+            int safetySkipped = SkipReasons is not null &&
+                SkipReasons.TryGetValue(SkipReason.PolicyRefused, out var n) ? n : 0;
+            if (Files > 0) return Failed == 0 ? CleanOutcome.Success : CleanOutcome.Partial;
+            if (Failed > 0) return CleanOutcome.Failed;
+            return safetySkipped > 0 ? CleanOutcome.SkippedOnly : CleanOutcome.NothingLeft;
+        }
+    }
+}
 
 /// <summary>
 /// Thrown when a cleanup is cancelled. It is still an <see cref="OperationCanceledException"/>,
@@ -58,9 +81,17 @@ public static class Cleaner
     /// boundaries always report immediately, whatever the throttle says.</summary>
     const long ForwardIntervalMs = 120;
 
-    /// <param name="mode">Where cleaned files go. By default, "your call" items go to the Recycle Bin.</param>
-    /// <param name="options">Run options (owner window, event sink, bin budget, owner tools, watchdog).
-    /// Null behaves safely: unknown bin capacity, owner tools on, watchdog on.</param>
+    /// <summary>
+    /// Cleans the given jobs. Every Delete job's files go to the Recycle Bin
+    /// (D-21: the bin is the default for ALL cleanable items); the only bytes
+    /// counted as freed are those an owner tool removed with explicit consent.
+    /// Every item path is evaluated against the deletion safety policy before
+    /// cleaning, and every file is re-checked at delete time.
+    /// </summary>
+    /// <param name="mode">Retained for compatibility; all Delete jobs go to the
+    /// Recycle Bin regardless of the mode (D-21).</param>
+    /// <param name="options">Run options (owner window, event sink, bin budget, owner tools, watchdog, policy).
+    /// Null behaves safely: unknown bin capacity, owner tools on without consent, watchdog on, default policy.</param>
     public static CleanResult Run(IReadOnlyList<CleanJob> jobs, IProgress<CleanProgress>? progress,
         RemovalMode mode = RemovalMode.ReviewToBin, CancellationToken ct = default,
         CleanOptions? options = null)
@@ -70,9 +101,10 @@ public static class Cleaner
         // caller sends one anyway it stays silent and untouched, takes up no part in the
         // progress list, and contributes nothing to the total — exactly as before.
         var executable = jobs.Where(j => j.Category.Action == CleanAction.Delete).ToList();
+        var policy = options?.Policy ?? DeletionSafetyPolicy.Default;
         long total = Math.Max(1, executable.Sum(j => j.Items.Sum(i => i.Size)));
         long done = 0, freed = 0, skipped = 0, recycled = 0;
-        int files = 0;
+        int files = 0, failed = 0;
         long attemptedTotal = 0;
         int filesAttemptedTotal = 0;
         var perCategory = new List<CategoryCleanResult>();
@@ -129,7 +161,6 @@ public static class Cleaner
             long jobFreed = 0, jobRecycled = 0, jobSkipped = 0;
             int jobFiles = 0;
             long partAttempted = 0;
-            bool recycle = RemovalPolicy.GoesToBin(mode, job.Category);
             // The latest in-flight report from the path being processed right now. Reset after
             // every path finishes, so it only ever describes work that has not been counted yet:
             // on cancellation it is the sole record of the interrupted path's partial progress.
@@ -160,14 +191,18 @@ public static class Cleaner
                     bool itemRebaselined = false;
 
                     // Owner tools first, where they exist: the tool's own clean command is
-                    // vendor-correct for its cache. Owner commands delete for good, so they
-                    // run only when this part deletes permanently; recycled parts run the
-                    // non-destructive pre-step at most. Hand-deletion always follows for
-                    // whatever remains, behind the fixed engine.
+                    // vendor-correct for its cache. Owner commands delete for good, so
+                    // they are a consented permanent action: they run ONLY for
+                    // Check-First items when the run carries explicit consent (Wave 4
+                    // sets it from the confirmation dialog). Without consent, the
+                    // non-destructive pre-step runs at most, and hand-deletion
+                    // recycles whatever remains, behind the fixed engine.
                     var tool = (options?.UseOwnerTools ?? true) ? OwnerTools.Match(item) : null;
                     if (tool != null)
                     {
-                        if (!recycle && tool.CleanCommands.Count > 0)
+                        bool ownerConsent = (options?.OwnerToolConsent ?? false) &&
+                            job.Category.Tier == SafetyLevel.CheckFirst;
+                        if (ownerConsent && tool.CleanCommands.Count > 0)
                         {
                             // Heartbeats during the owner phase: the tool reports no
                             // incremental progress, so liveness + the command label are
@@ -248,34 +283,40 @@ public static class Cleaner
                         EmitProgress((double)(done + attemptedInItem) / total, step, currentItem,
                             job.Category.Id, partIndex, executable.Count, partFraction, fp.CurrentPath,
                             jobFiles + fp.FilesRemoved,
-                            jobFreed + (recycle ? 0 : fp.BytesRemoved),
-                            jobRecycled + (recycle ? fp.BytesRemoved : 0),
+                            jobFreed,
+                            jobRecycled + fp.BytesRemoved,
                             jobSkipped,
                             filesExtra: fp.FilesRemoved,
-                            freedExtra: recycle ? 0 : fp.BytesRemoved,
-                            recycledExtra: recycle ? fp.BytesRemoved : 0);
+                            freedExtra: 0,
+                            recycledExtra: fp.BytesRemoved);
                     }, item.Name);
 
                     foreach (var p in item.Paths)
                     {
+                        // Policy gate, before EVERY delete: the path is evaluated
+                        // fresh, right now — never memoized. Tool-resolved paths
+                        // (npm, Go) take the tool-resolved evaluation. A refused
+                        // path is skipped with a recorded reason, never touched;
+                        // FileOps re-checks every file at delete time as well.
+                        var decision = item.ToolResolved
+                            ? policy.EvaluateToolResolved(p)
+                            : policy.Evaluate(p);
+                        if (decision.Verdict != PolicyVerdict.Allow)
+                        {
+                            CountReasons(new Dictionary<SkipReason, int> { [SkipReason.PolicyRefused] = 1 });
+                            CleanLog.WriteLine($"path skipped by policy {job.Category.Id}/{item.Name}: {p}: " +
+                                $"{decision.Verdict} (step {decision.Step}, {decision.Matched})");
+                            continue;
+                        }
                         try
                         {
-                            FileOps.DeleteResult r;
-                            if (recycle)
-                            {
-                                r = FileOps.RecycleContents(p, item.MinAge, ct, fileProgress,
-                                    options?.Budget, options?.OwnerWindowHandle ?? default);
-                                recycled += r.Freed;
-                                jobRecycled += r.Freed;
-                            }
-                            else
-                            {
-                                r = FileOps.Delete(p, item.MinAge, ct, fileProgress);
-                                freed += r.Freed;
-                                jobFreed += r.Freed;
-                            }
+                            var r = FileOps.RecycleContents(p, item.MinAge, ct, fileProgress,
+                                options?.Budget, options?.OwnerWindowHandle ?? default, policy);
+                            recycled += r.Freed;
+                            jobRecycled += r.Freed;
                             files += r.Files;
                             jobFiles += r.Files;
+                            failed += r.Failed;
                             got += r.Freed;
                             CountReasons(r.Reasons);
                             if (r.LastShellReturnCode is { } code && (code != 0 || r.ShellAborted))
@@ -313,7 +354,7 @@ public static class Cleaner
                 }
                 perCategory.Add(new CategoryCleanResult(job.Category.Id, job.Category.Title,
                     jobFreed, jobRecycled, jobSkipped, jobFiles,
-                    recycle ? CleanDestination.Recycled : CleanDestination.Deleted));
+                    CleanDestination.Recycled));
                 recorded = true;
                 sink.Emit(CleanEventKind.PartFinished, job.Category.Id, CleanPhase.Finishing, "", total,
                     attemptedTotal, freed + recycled, filesAttemptedTotal, files, jobTotal, partAttempted,
@@ -332,8 +373,7 @@ public static class Cleaner
                 {
                     files += inFlight.FilesRemoved;
                     jobFiles += inFlight.FilesRemoved;
-                    if (recycle) { recycled += inFlight.BytesRemoved; jobRecycled += inFlight.BytesRemoved; }
-                    else { freed += inFlight.BytesRemoved; jobFreed += inFlight.BytesRemoved; }
+                    recycled += inFlight.BytesRemoved; jobRecycled += inFlight.BytesRemoved;
                 }
                 attemptedTotal += inFlight.BytesAttempted;
                 partAttempted += inFlight.BytesAttempted;
@@ -342,7 +382,7 @@ public static class Cleaner
                 if (!recorded)
                     perCategory.Add(new CategoryCleanResult(job.Category.Id, job.Category.Title,
                         jobFreed, jobRecycled, jobSkipped, jobFiles,
-                        recycle ? CleanDestination.Recycled : CleanDestination.Deleted));
+                        CleanDestination.Recycled));
                 sink.Emit(CleanEventKind.RunCancelled, job.Category.Id, CleanPhase.Finishing, "", total,
                     attemptedTotal, freed + recycled, filesAttemptedTotal, files, jobTotal, partAttempted,
                     Math.Max(lastFraction, (double)(done + currentItemAttempted) / total),
@@ -351,7 +391,7 @@ public static class Cleaner
                     job.Category.Id, partIndex, executable.Count,
                     partFiles: jobFiles, partFreed: jobFreed, partRecycled: jobRecycled,
                     partSkipped: jobSkipped, cancelled: true);
-                throw new CleanCancelledException(new CleanResult(freed, skipped, files, recycled, perCategory, reasons), ct);
+                throw new CleanCancelledException(new CleanResult(freed, skipped, files, recycled, perCategory, reasons, failed), ct);
             }
             catch (Exception ex)
             {
@@ -365,7 +405,7 @@ public static class Cleaner
                 if (!recorded)
                     perCategory.Add(new CategoryCleanResult(job.Category.Id, job.Category.Title,
                         jobFreed, jobRecycled, jobSkipped, jobFiles,
-                        recycle ? CleanDestination.Recycled : CleanDestination.Deleted));
+                        CleanDestination.Recycled));
                 CleanLog.WriteLine($"part failed {job.Category.Id}: {ex.GetType().Name}: {ex.Message}");
                 sink.Emit(CleanEventKind.PartFailed, job.Category.Id, CleanPhase.Finishing, "", total,
                     attemptedTotal, freed + recycled, filesAttemptedTotal, files, jobTotal, partAttempted,
@@ -383,7 +423,7 @@ public static class Cleaner
             attemptedTotal, freed + recycled, filesAttemptedTotal, files, 0, 0, 1, 0,
             detail: string.Join(", ", reasons.Select(kv => $"{kv.Key}={kv.Value}")));
         EmitProgress(1, S.AllDone, "");
-        return new CleanResult(freed, skipped, files, recycled, perCategory, reasons);
+        return new CleanResult(freed, skipped, files, recycled, perCategory, reasons, failed);
     }
 
     /// <summary>Turns a file-operation progress callback into a plain <see cref="IProgress{T}"/>.</summary>

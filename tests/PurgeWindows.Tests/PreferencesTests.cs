@@ -19,8 +19,18 @@ public sealed class PreferencesTests : IDisposable
     [Fact]
     public void RemovalChoiceSurvivesRestart()
     {
-        new PreferencesStore(SettingsPath).Save(new() { Removal = RemovalMode.EverythingPermanent });
-        Assert.Equal(RemovalMode.EverythingPermanent, new PreferencesStore(SettingsPath).Load().Removal);
+        new PreferencesStore(SettingsPath).Save(new() { Removal = RemovalMode.EverythingToBin });
+        Assert.Equal(RemovalMode.EverythingToBin, new PreferencesStore(SettingsPath).Load().Removal);
+    }
+
+    [Fact]
+    public void RemovedPermanentChoiceFallsBackToTheDefault()
+    {
+        Directory.CreateDirectory(_folder);
+        // Written by a version that still offered permanent deletion (numeric 2):
+        // the removed value falls back to the default instead of breaking the load.
+        File.WriteAllText(SettingsPath, "{\"Removal\":2}");
+        Assert.Equal(RemovalMode.ReviewToBin, new PreferencesStore(SettingsPath).Load().Removal);
     }
 
     [Fact]

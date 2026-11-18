@@ -130,8 +130,6 @@
                         <TextBlock Style="{StaticResource Hint}" Text="{x:Static loc:S.RemovalDefaultHint}" />
                         <RadioButton x:Name="RemovalBinRadio" GroupName="Removal" Content="{x:Static loc:S.RemovalBin}" Style="{StaticResource SettingRadio}" Margin="0,18,0,0" />
                         <TextBlock Style="{StaticResource Hint}" Text="{x:Static loc:S.RemovalBinHint}" />
-                        <RadioButton x:Name="RemovalPermanentRadio" GroupName="Removal" Content="{x:Static loc:S.RemovalPermanent}" Style="{StaticResource SettingRadio}" Margin="0,18,0,0" />
-                        <TextBlock Style="{StaticResource Hint}" Text="{x:Static loc:S.RemovalPermanentHint}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Card}" Padding="18" Margin="0,0,0,14">

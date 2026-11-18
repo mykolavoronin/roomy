@@ -82,6 +82,7 @@ public sealed class HangRegressionTests : IDisposable
     [Fact]
     public void CancellationMidRunIsPromptAndPartialTotalsAreExact()
     {
+        RequireWindows();
         const int totalFiles = 10_000;
         var (root, totalBytes) = MakeTree("big", totalFiles, 100);
         var cat = JobCategory("a", "big", root, totalBytes);
@@ -97,7 +98,7 @@ public sealed class HangRegressionTests : IDisposable
 
         var sw = Stopwatch.StartNew();
         var ex = Assert.Throws<CleanCancelledException>(() =>
-            Cleaner.Run([new(cat, cat.Items)], progress, RemovalMode.EverythingPermanent, cts.Token));
+            Cleaner.Run([new(cat, cat.Items)], progress, ct: cts.Token));
         sw.Stop();
 
         var remaining = CountFiles(root);
@@ -106,7 +107,8 @@ public sealed class HangRegressionTests : IDisposable
         Assert.True(remaining > 0, "the stop must land mid-run, not after everything is gone");
         // Exact partial totals: the partial result must match the disk exactly.
         Assert.Equal(removed, ex.Partial.Files);
-        Assert.Equal((long)removed * 100, ex.Partial.Freed);
+        Assert.Equal((long)removed * 100, ex.Partial.Recycled);
+        Assert.Equal(0, ex.Partial.Freed);
         Assert.Equal(0, ex.Partial.Skipped);
         Assert.True(sw.Elapsed < TimeSpan.FromSeconds(30), $"stop took {sw.Elapsed}");
     }
@@ -121,10 +123,11 @@ public sealed class HangRegressionTests : IDisposable
 
         var sw = Stopwatch.StartNew();
         var ex = Assert.Throws<CleanCancelledException>(() =>
-            Cleaner.Run([new(cat, cat.Items)], null, RemovalMode.EverythingPermanent, cts.Token));
+            Cleaner.Run([new(cat, cat.Items)], null, ct: cts.Token));
         sw.Stop();
 
         Assert.Equal(0, ex.Partial.Freed);
+        Assert.Equal(0, ex.Partial.Recycled);
         Assert.Equal(0, ex.Partial.Files);
         Assert.Equal(0, ex.Partial.Skipped);
         Assert.Single(ex.Partial.Categories!);
@@ -268,15 +271,17 @@ public sealed class HangRegressionTests : IDisposable
     [Fact]
     public void EventContractIsSequencedMonotonicAndComplete()
     {
+        RequireWindows();
         var (root, totalBytes) = MakeTree("events", 130, 10);
         var a = JobCategory("a", "events", root, totalBytes);
         var b = JobCategory("b", "missing", Path.Combine(_folder, "nope"), 1000);
         var events = new SyncEvents();
         var options = new CleanOptions { Events = events };
 
-        var r = Cleaner.Run([new(a, a.Items), new(b, b.Items)], null, RemovalMode.EverythingPermanent, default, options);
+        var r = Cleaner.Run([new(a, a.Items), new(b, b.Items)], null, default, options);
 
-        Assert.Equal(1300, r.Freed);
+        Assert.Equal(1300, r.Recycled);
+        Assert.Equal(0, r.Freed);
         Assert.NotEmpty(events.Seen);
         // Sequenced from 1, contiguous.
         Assert.Equal(Enumerable.Range(1, events.Seen.Count).Select(i => (long)i), events.Seen.Select(e => e.Sequence));
@@ -311,6 +316,7 @@ public sealed class HangRegressionTests : IDisposable
     [Fact]
     public void CancelledRunEndsWithRunCancelledAndPartialTotals()
     {
+        RequireWindows();
         var (root, totalBytes) = MakeTree("cancel-events", 5000, 10);
         var cat = JobCategory("a", "cancel-events", root, totalBytes);
         using var cts = new CancellationTokenSource();
@@ -319,10 +325,10 @@ public sealed class HangRegressionTests : IDisposable
         var options = new CleanOptions { Events = events };
 
         var ex = Assert.Throws<CleanCancelledException>(() =>
-            Cleaner.Run([new(cat, cat.Items)], progress, RemovalMode.EverythingPermanent, cts.Token, options));
+            Cleaner.Run([new(cat, cat.Items)], progress, ct: cts.Token, options: options));
 
         Assert.Equal(CleanEventKind.RunCancelled, events.Seen[^1].Kind);
-        Assert.Equal(ex.Partial.Freed, events.Seen[^1].BytesRemovedSoFar);
+        Assert.Equal(ex.Partial.Freed + ex.Partial.Recycled, events.Seen[^1].BytesRemovedSoFar);
         Assert.DoesNotContain(events.Seen, e => e.Kind == CleanEventKind.RunFinished);
     }
 
@@ -331,14 +337,16 @@ public sealed class HangRegressionTests : IDisposable
     [Fact]
     public void ThrowingEventAndProgressListenersCannotBreakARun()
     {
+        RequireWindows();
         var (root, _) = MakeTree("throwing", 130, 10);
         var cat = JobCategory("a", "throwing", root, 1300);
         var options = new CleanOptions { Events = new ThrowingEvents() };
 
-        var r = Cleaner.Run([new(cat, cat.Items)], new ThrowingProgress(), RemovalMode.EverythingPermanent,
+        var r = Cleaner.Run([new(cat, cat.Items)], new ThrowingProgress(),
             default, options);
 
-        Assert.Equal(1300, r.Freed);
+        Assert.Equal(1300, r.Recycled);
+        Assert.Equal(0, r.Freed);
         Assert.Equal(130, r.Files);
         Assert.Single(r.Categories!);
     }
@@ -510,6 +518,87 @@ public sealed class HangRegressionTests : IDisposable
 
         Assert.Equal(OwnerToolOutcome.Cancelled, result.Outcome);
         Assert.True(sw.Elapsed < TimeSpan.FromSeconds(15), $"cancel took {sw.Elapsed}");
+    }
+
+    // ---------- P1-5: policy gate + bin default ----------
+
+    /// <summary>Roots for a machine that is not this one, so the real temp folder is
+    /// outside the policy's allowlist and every real path is refused.</summary>
+    static PolicyRoots ElsewhereRoots() => new(
+        @"C:\Users\policy-test-user",
+        @"C:\Users\policy-test-user\AppData\Local",
+        @"C:\Users\policy-test-user\AppData\Roaming",
+        @"C:\ProgramData", @"C:\Windows", @"C:\",
+        @"C:\Users\policy-test-user\Downloads",
+        @"C:\Users\policy-test-user\Documents",
+        @"C:\Users\policy-test-user\Desktop",
+        @"C:\Users\policy-test-user\Pictures",
+        @"C:\Users\policy-test-user\Videos",
+        @"C:\Users\policy-test-user\Music",
+        @"C:\Users\policy-test-user\AppData\Local\Temp",
+        @"C:\Program Files", @"C:\Program Files (x86)");
+
+    [Fact]
+    public void PolicyRefusedPathIsNeverDeletedByTheCleaner()
+    {
+        RequireWindows();
+        var dir = Path.Combine(_folder, "refused");
+        Directory.CreateDirectory(dir);
+        var keep = Path.Combine(dir, "keep.bin");
+        File.WriteAllBytes(keep, new byte[1024]);
+        var cat = JobCategory("a", "refused", dir, 1024);
+        var options = new CleanOptions { Policy = new DeletionSafetyPolicy(ElsewhereRoots()) };
+
+        var r = Cleaner.Run([new(cat, cat.Items)], null, options: options);
+
+        Assert.Equal(0, r.Files);
+        Assert.Equal(0, r.Recycled);
+        Assert.Equal(0, r.Freed);
+        Assert.True(r.SkipReasons!.TryGetValue(SkipReason.PolicyRefused, out var refused) && refused > 0);
+        Assert.True(File.Exists(keep), "a policy-refused file must still be there");
+    }
+
+    [Fact]
+    public void CleanerDefaultSendsFilesToTheRecycleBin()
+    {
+        RequireWindows();
+        var dir = Path.Combine(_folder, "bin-default");
+        Directory.CreateDirectory(dir);
+        var path = Path.Combine(dir, "gone.bin");
+        File.WriteAllBytes(path, new byte[2048]);
+        var cat = JobCategory("a", "bin-default", dir, 2048);
+        var (before, _) = Native.QueryRecycleBin();
+
+        var r = Cleaner.Run([new(cat, cat.Items)], null);
+
+        Assert.Equal(1, r.Files);
+        Assert.Equal(2048, r.Recycled);
+        Assert.Equal(0, r.Freed);
+        Assert.False(File.Exists(path));
+        var (after, _) = Native.QueryRecycleBin();
+        Assert.True(after > before, "the file should now be in the Recycle Bin");
+    }
+
+    [Fact]
+    public void PstFileInsideAllowlistedRootIsSkippedWithPolicyRefused()
+    {
+        RequireWindows();
+        // The temp folder is allowlisted, but .pst files are denied at step 1 even
+        // inside an allowlisted root: they may be the only copy of the mail.
+        var dir = Path.Combine(_folder, "mail");
+        Directory.CreateDirectory(dir);
+        var pst = Path.Combine(dir, "archive.pst");
+        var other = Path.Combine(dir, "other.bin");
+        File.WriteAllBytes(pst, new byte[1024]);
+        File.WriteAllBytes(other, new byte[1024]);
+
+        var r = FileOps.RecycleContents(dir, null, policy: DeletionSafetyPolicy.Default);
+
+        Assert.Equal(1, r.Files);
+        Assert.Equal(1, r.Skipped);
+        Assert.Equal(1, r.Reasons[SkipReason.PolicyRefused]);
+        Assert.True(File.Exists(pst), "the .pst file must still be there");
+        Assert.False(File.Exists(other));
     }
 
     public void Dispose()

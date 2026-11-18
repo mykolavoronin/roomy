@@ -35,4 +35,9 @@
     <Resource Include="Assets\purgewindows.ico" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The category catalog data; loaded at runtime as an embedded resource. -->
+    <EmbeddedResource Include="Resources\explanations.windows.json" />
+  </ItemGroup>
+
 </Project>

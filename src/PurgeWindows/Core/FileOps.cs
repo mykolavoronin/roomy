@@ -52,6 +52,13 @@ public static class FileOps
         catch { }
     }
 
+    /// <summary>Reports the folder being measured without ever letting a listener break the scan.</summary>
+    static void TellPath(IProgress<string>? progress, string path)
+    {
+        try { progress?.Report(path); }
+        catch { }
+    }
+
     /// <summary>Emits at most one heartbeat per 250 ms (the first call always emits).</summary>
     sealed class HeartbeatGate
     {
@@ -87,7 +94,11 @@ public static class FileOps
 
     public static bool Exists(string p) => File.Exists(p) || Directory.Exists(p);
 
-    public static (long Bytes, int Files) Measure(string path, TimeSpan? minAge, CancellationToken ct = default)
+    /// <param name="pathProgress">When set, the folder being measured is reported every
+    /// 200 files, so the scan view can show what is being looked at right now.
+    /// Best-effort; never affects the measurement.</param>
+    public static (long Bytes, int Files) Measure(string path, TimeSpan? minAge, CancellationToken ct = default,
+        IProgress<string>? pathProgress = null)
     {
         long bytes = 0;
         int files = 0;
@@ -103,14 +114,18 @@ public static class FileOps
             }
             if (!Directory.Exists(root)) return (0, 0);
 
-            var e = new FileSystemEnumerable<(long Len, DateTime Mod)>(root,
-                (ref FileSystemEntry x) => (x.Length, x.LastWriteTimeUtc.UtcDateTime), Deep())
+            int seen = 0;
+            var e = new FileSystemEnumerable<(long Len, DateTime Mod, string Path)>(root,
+                (ref FileSystemEntry x) => (x.Length, x.LastWriteTimeUtc.UtcDateTime,
+                    pathProgress is null ? "" : x.ToFullPath()), Deep())
             {
                 ShouldIncludePredicate = (ref FileSystemEntry x) => !x.IsDirectory,
             };
-            foreach (var (len, mod) in e)
+            foreach (var (len, mod, p) in e)
             {
                 ct.ThrowIfCancellationRequested();
+                if (pathProgress is not null && ++seen % 200 == 0)
+                    TellPath(pathProgress, Path.GetDirectoryName(p) ?? p);
                 if (mod <= cutoff) { bytes += len; files++; }
             }
         }
@@ -129,14 +144,19 @@ public static class FileOps
     /// exception propagates, so callers can credit it precisely.
     /// </summary>
     /// <param name="progress">Live progress + heartbeats. Best-effort; can never change what gets deleted.</param>
+    /// <param name="policy">When given, the root is evaluated before anything is
+    /// deleted and every file is re-checked at delete time; refused paths are
+    /// skipped with <see cref="SkipReason.PolicyRefused"/>. Null keeps the legacy
+    /// Guard-only behaviour (direct callers that already enforce the policy).</param>
     public static DeleteResult Delete(string path, TimeSpan? minAge, CancellationToken ct = default,
-        IProgress<FileOpProgress>? progress = null)
+        IProgress<FileOpProgress>? progress = null, DeletionSafetyPolicy? policy = null)
     {
         ct.ThrowIfCancellationRequested();
         var cutoff = Cutoff(minAge);
         if (SafeFs.TrustedPath(path) is not { } root) return default;
         Guard(path);
         Guard(root);
+        if (policy is not null && Refused(policy, root, out var refusal)) return refusal;
 
         if (File.Exists(root))
         {
@@ -179,6 +199,12 @@ public static class FileOps
                 current = p;
                 if (gate.TryBeat()) Tell(progress, Snap(CleanPhase.Deleting, heartbeat: true, final: false));
                 if (mod > cutoff) { skipped++; skippedBytes += len; Count(SkipReason.TooNew); continue; }
+                // Delete-time re-check: the file must really be under the checked
+                // root and outside every protected set, as of right now.
+                if (policy is not null && !policy.AllowsContained(p, root))
+                {
+                    skipped++; skippedBytes += len; Count(SkipReason.PolicyRefused); continue;
+                }
                 attempted++;
                 attemptedBytes += len;
                 if (SafeFs.Delete(p, root)) { freed += len; ok++; }
@@ -214,13 +240,15 @@ public static class FileOps
     /// <param name="budget">When given, a file that cannot fit in the remaining bin capacity
     /// is skipped with a recorded reason instead of reaching the shell.</param>
     /// <param name="ownerHwnd">Owner window for the shell call; zero resolves the main window.</param>
+    /// <param name="policy">When given, the file is evaluated before it reaches the shell.</param>
     public static DeleteResult Recycle(string path, TimeSpan? minAge, CancellationToken ct = default,
-        RecycleBinBudget? budget = null, IntPtr ownerHwnd = default)
+        RecycleBinBudget? budget = null, IntPtr ownerHwnd = default, DeletionSafetyPolicy? policy = null)
     {
         ct.ThrowIfCancellationRequested();
         if (SafeFs.TrustedPath(path) is not { } real || !File.Exists(real)) return default;
         Guard(path);
         Guard(real);
+        if (policy is not null && Refused(policy, real, out var refusal)) return refusal;
         var fi = new FileInfo(real);
         long len = fi.Length;
         if (fi.LastWriteTimeUtc > Cutoff(minAge))
@@ -251,20 +279,25 @@ public static class FileOps
     /// <param name="progress">Live progress + heartbeats, per batch and at least every 250 ms.</param>
     /// <param name="budget">Pre-flight bin budget; null means capacity unknown (no enforcement).</param>
     /// <param name="ownerHwnd">Owner window for shell calls; zero resolves the main window.</param>
+    /// <param name="policy">When given, the root is evaluated before anything moves
+    /// and every file is re-checked at delete time; refused files are skipped with
+    /// <see cref="SkipReason.PolicyRefused"/>.</param>
     public static DeleteResult RecycleContents(string path, TimeSpan? minAge, CancellationToken ct = default,
-        IProgress<FileOpProgress>? progress = null, RecycleBinBudget? budget = null, IntPtr ownerHwnd = default)
+        IProgress<FileOpProgress>? progress = null, RecycleBinBudget? budget = null, IntPtr ownerHwnd = default,
+        DeletionSafetyPolicy? policy = null)
     {
         ct.ThrowIfCancellationRequested();
         var cutoff = Cutoff(minAge);
         if (SafeFs.TrustedPath(path) is not { } root) return default;
         Guard(path);
         Guard(root);
+        if (policy is not null && Refused(policy, root, out var refusal)) return refusal;
 
         if (File.Exists(root))
         {
             long len = 0;
             try { len = new FileInfo(root).Length; } catch { }
-            var single = Recycle(root, minAge, ct, budget, ownerHwnd);
+            var single = Recycle(root, minAge, ct, budget, ownerHwnd, policy);
             int tried = single.Files + single.Failed;
             if (tried + single.Skipped > 0)
                 Tell(progress, new FileOpProgress(root, tried, tried, tried > 0 ? len : 0, tried > 0 ? len : 0,
@@ -354,7 +387,9 @@ public static class FileOps
                 if (gate.TryBeat()) Tell(progress, Snap(CleanPhase.Validating, heartbeat: true, final: false));
                 if (mod > cutoff) { skipped++; skippedBytes += len; Count(SkipReason.TooNew); continue; }
                 // Only files that really live under the checked root go to the bin.
-                var real = SafeFs.TrustedPath(p);
+                // Enumeration yields long-form paths, so the per-file fast check
+                // applies (P1-1); junction safety is unchanged.
+                var real = SafeFs.TrustedPathFast(p);
                 if (real is null || !SafeFs.IsInside(real, root))
                 {
                     skipped++;
@@ -364,6 +399,11 @@ public static class FileOps
                     // paths get their own reason and everything else is link-rejected.
                     Count(p.Length > 1024 ? SkipReason.PathTooLong : SkipReason.LinkRejected);
                     continue;
+                }
+                // Delete-time re-check against the safety policy, on the real path.
+                if (policy is not null && !policy.AllowsContained(real, root))
+                {
+                    skipped++; skippedBytes += len; Count(SkipReason.PolicyRefused); continue;
                 }
                 batch.Add((real, len));
                 batchBytes += len;
@@ -435,6 +475,24 @@ public static class FileOps
     {
         try { return Path.GetFullPath(p).TrimEnd('\\'); }
         catch { return p.TrimEnd('\\'); }
+    }
+
+    /// <summary>
+    /// Evaluates <paramref name="path"/> against the safety policy. True when the
+    /// policy refuses it, with a result that records the refusal (the decision's
+    /// step and match go to the clean log, never discarded).
+    /// </summary>
+    static bool Refused(DeletionSafetyPolicy policy, string path, out DeleteResult refusal)
+    {
+        var decision = policy.Evaluate(path);
+        if (decision.Verdict == PolicyVerdict.Allow)
+        {
+            refusal = default;
+            return false;
+        }
+        CleanLog.WriteLine($"policy refused {path}: {decision.Verdict} (step {decision.Step}, {decision.Matched})");
+        refusal = new(0, 0, 0, SkipReasons: new Dictionary<SkipReason, int> { [SkipReason.PolicyRefused] = 1 });
+        return true;
     }
 
     /// <summary>Last line of defence: never wipe a drive root or a top-level personal/system folder.</summary>

@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Media;
 using PurgeWindows.Core;
 using PurgeWindows.Localization;
+using PurgeWindows.Services;
 
 namespace PurgeWindows.ViewModels;
 
@@ -116,6 +117,12 @@ public sealed class MainVM : ObservableObject
 
     // ---------- scanning ----------
 
+    CancellationTokenSource? _scanCts;
+
+    /// <summary>Asks the running scan to stop between steps (engine support; the
+    /// scan-Stop button itself is a later wave). A stopped scan returns Home.</summary>
+    public void StopScan() => _scanCts?.Cancel();
+
     public ObservableCollection<ScanStepVM> ScanSteps { get; } = [];
 
     string _scanStep = "";
@@ -145,6 +152,8 @@ public sealed class MainVM : ObservableObject
         if (_busy) return;
         _busy = true;
         SpaceMap.CancelScan();
+        _scanCts?.Dispose();
+        _scanCts = new CancellationTokenSource();
         try
         {
             ScanSteps.Clear();
@@ -156,33 +165,37 @@ public sealed class MainVM : ObservableObject
             IsCleanupTab = true;
             State = AppState.Scanning;
 
-            var ctx = new ScanContext { IsAdmin = IsAdmin };
-            var results = new List<CleanupCategory>();
-            for (int i = 0; i < Scanner.Steps.Count; i++)
+            // The demo reuses the same queue with steps that return demo data,
+            // so the scan view behaves identically in both modes.
+            var steps = IsDemo
+                ? Scanner.Steps.Select(s => new ScanStep(s.Id, s.Title, _ => DemoData.Category(s.Id))).ToList()
+                : Scanner.Steps;
+            var ctx = new ScanContext { IsAdmin = IsAdmin, Token = _scanCts.Token };
+            // Progress<T> marshals events back to the UI thread; the coalescer
+            // keeps Active updates to one per 140 ms while boundary events stay
+            // immediate. The queue is the single progress/cancel contract for
+            // scanning, mirroring the cleaning event contract (P1-7).
+            using var coalescer = new ScanCoalescer(new Progress<ScanProgressEvent>(OnScanEvent));
+
+            // A tiny pause so each row visibly ticks off; real work usually takes longer anyway.
+            var pace = Stopwatch.StartNew();
+            async Task PaceStep(ScanStep _, CleanupCategory? _)
             {
-                var step = Scanner.Steps[i];
-                var row = ScanSteps[i];
-                row.State = StepState.Active;
-                ScanStep = Loc.Format("CheckingStep", step.Title);
-
-                var sw = Stopwatch.StartNew();
-                var cat = IsDemo ? DemoData.Category(step.Id) : await Task.Run(() => SafeRun(step, ctx));
-                // A tiny pause so each row visibly ticks off; real work usually takes longer anyway.
                 int min = IsDemo ? 240 : 90;
-                if (sw.ElapsedMilliseconds < min) await Task.Delay(min - (int)sw.ElapsedMilliseconds);
-
-                row.Finish(cat);
-                ScanStepsDone = i + 1;
-                if (cat != null)
-                {
-                    results.Add(cat);
-                    ScanItemsFound += cat.Items.Count;
-                    if (cat.Safety == Safety.Safe && !cat.Blocked) ScanFound += cat.Size;
-                }
-                RaiseScanTotals();
+                var left = min - (int)pace.ElapsedMilliseconds;
+                pace.Restart();
+                if (left > 0) await Task.Delay(left);
             }
 
-            BuildCategories(results);
+            var results = await ScanQueue.RunAsync(steps, ctx, coalescer, _scanCts.Token, PaceStep);
+            coalescer.Flush();
+            if (_scanCts.Token.IsCancellationRequested)
+            {
+                State = AppState.Home;
+                return;
+            }
+
+            BuildCategories(results.ToList());
             await Task.Delay(400);
             State = AppState.Results;
         }
@@ -197,10 +210,35 @@ public sealed class MainVM : ObservableObject
         }
     }
 
-    static CleanupCategory? SafeRun(ScanStep s, ScanContext c)
+    void OnScanEvent(ScanProgressEvent e)
     {
-        try { return s.Run(c); }
-        catch { return null; }
+        if (e.StepIndex < 0 || e.StepIndex >= ScanSteps.Count) return;
+        var row = ScanSteps[e.StepIndex];
+        switch (e.State)
+        {
+            case ScanStepState.Active:
+                row.State = StepState.Active;
+                ScanStep = Loc.Format("CheckingStep", e.StepTitle);
+                break;
+            case ScanStepState.Done:
+                row.Finish(e.Category);
+                ScanStepsDone = e.StepIndex + 1;
+                if (e.Category is { } cat)
+                {
+                    ScanItemsFound += cat.Items.Count;
+                    if (cat.Tier == SafetyLevel.Safe && !cat.Blocked) ScanFound += cat.Size;
+                }
+                RaiseScanTotals();
+                break;
+            case ScanStepState.Failed:
+                // A failed step reports nothing and the scan carries on.
+                row.Finish(null);
+                ScanStepsDone = e.StepIndex + 1;
+                RaiseScanTotals();
+                break;
+            case ScanStepState.Cancelled:
+                break;
+        }
     }
 
     // ---------- results ----------
@@ -211,9 +249,10 @@ public sealed class MainVM : ObservableObject
     {
         Categories.Clear();
         var shown = results.Where(c => c.Blocked || c.Size > 0).ToList();
-        var ordered = shown.Where(c => c.Safety == Safety.Safe && !c.Blocked).OrderByDescending(c => c.Size)
+        var ordered = shown.Where(c => c.Tier == SafetyLevel.Safe && !c.Blocked).OrderByDescending(c => c.Size)
             .Concat(shown.Where(c => c.Blocked))
-            .Concat(shown.Where(c => c.Safety == Safety.Review && !c.Blocked).OrderByDescending(c => c.Size));
+            .Concat(shown.Where(c => c.Tier == SafetyLevel.CheckFirst && !c.Blocked).OrderByDescending(c => c.Size))
+            .Concat(shown.Where(c => c.Tier == SafetyLevel.ReportOnly && !c.Blocked).OrderByDescending(c => c.Size));
         foreach (var c in ordered) Categories.Add(new CategoryVM(c, this));
 
         Raise(nameof(SafeTotal));
@@ -469,7 +508,7 @@ public sealed class MainVM : ObservableObject
         string preflightNote = "";
         if (!IsDemo)
         {
-            var check = await CheckRecyclePreflightAsync(jobs, mode);
+            var check = await CheckRecyclePreflightAsync(jobs);
             if (check is { } c)
             {
                 budget = c.Budget;
@@ -493,7 +532,7 @@ public sealed class MainVM : ObservableObject
         // Recycle Bin (the space is only freed once the bin is emptied). The dialog lists
         // every category with where it goes, so there are no surprises.
         var lines = jobs.Select(j => ConfirmLineFor(j, mode)).ToList();
-        bool anyReview = jobs.Any(j => j.Category.Safety == Safety.Review);
+        bool anyReview = jobs.Any(j => j.Category.Tier == SafetyLevel.CheckFirst);
         if (anyReview || mode == RemovalMode.EverythingToBin)
         {
             bool allBin = lines.All(l => l.Destination == ConfirmDestination.Bin);
@@ -637,6 +676,31 @@ public sealed class MainVM : ObservableObject
         Raise(nameof(FailedPartsText));
         State = AppState.Done;
         RaiseCancelState();
+        RecordHistory(r);
+    }
+
+    /// <summary>
+    /// Records a real clean in the cleanup history (never demo runs, never when
+    /// the user turned history off). Recording must never break the done screen,
+    /// so every failure is swallowed. Per-item detail stays empty: the engine
+    /// does not supply it yet, and history must not invent paths. The reclaimed
+    /// figure stays unknown until settled-gain measurement is wired in.
+    /// </summary>
+    void RecordHistory(CleanResult r)
+    {
+        if (IsDemo) return;
+        try
+        {
+            if (!new PreferencesStore(PreferencesStore.DefaultPath).Load().RecordCleanupHistory) return;
+            var entry = new CleanupHistoryEntry(
+                Guid.NewGuid(), DateTimeOffset.Now, CleanupTrigger.Manual, "cleanup",
+                r.Recycled, null, [], [], [],
+                (r.Categories ?? []).Select(c =>
+                    new HistoryCategorySummary(c.CategoryId, c.Title, c.Freed, c.Recycled, c.Files)).ToList(),
+                null, CleanupVerificationState.Unknown, r.Recycled > 0);
+            new CleanupHistoryStore().Record(entry);
+        }
+        catch { /* history is best-effort; the done screen already happened */ }
     }
 
     /// <summary>
@@ -646,31 +710,11 @@ public sealed class MainVM : ObservableObject
     /// unknown, never guessed.
     /// </summary>
     static async Task<(RecyclePreflight Preflight, RecycleBinBudget Budget)?> CheckRecyclePreflightAsync(
-        List<CleanJob> jobs, RemovalMode mode)
+        List<CleanJob> jobs)
     {
-        var planned = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
-        foreach (var job in jobs)
-        {
-            if (!RemovalPolicy.GoesToBin(mode, job.Category)) continue;
-            foreach (var item in job.Items)
-            {
-                var drives = item.Paths
-                    .Select(p => Path.GetPathRoot(p))
-                    .Where(r => !string.IsNullOrEmpty(r))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-                if (drives.Count == 0) continue;
-                long perDrive = item.Size / drives.Count;
-                for (int i = 0; i < drives.Count; i++)
-                {
-                    var root = drives[i]!;
-                    long share = perDrive + (i == 0 ? item.Size % drives.Count : 0);
-                    planned[root] = planned.TryGetValue(root, out var n) ? n + share : share;
-                }
-            }
-        }
+        var planned = VolumeCapacity.Plan(jobs);
         if (planned.Count == 0) return null;
-        var capacities = await Task.Run(() => RecycleBinCapacity.QueryAll(planned.Keys));
+        var capacities = await Task.Run(() => VolumeCapacity.QueryAll(planned.Keys));
         var preflight = RecyclePreflight.Evaluate(planned, capacities);
         CleanLog.WriteLine($"pre-flight planned={preflight.PlannedBytes} knownRemaining={preflight.KnownRemainingBytes} " +
             $"exceeds={preflight.ExceedsCapacity} approaching={preflight.ApproachingCapacity} " +
@@ -763,7 +807,9 @@ public sealed class MainVM : ObservableObject
 
     // ---------- confirm dialog ----------
 
-    TaskCompletionSource<bool>? _confirm;
+    /// <summary>One open confirmation at a time; a second request answers the
+    /// first with "no" instead of orphaning its waiter (P1-6).</summary>
+    readonly ConfirmGate _confirmGate = new();
 
     bool _confirmVisible;
     public bool ConfirmVisible { get => _confirmVisible; private set => Set(ref _confirmVisible, value); }
@@ -784,16 +830,14 @@ public sealed class MainVM : ObservableObject
         ConfirmLines.Clear();
         foreach (var l in lines) ConfirmLines.Add(l);
         Raise(nameof(HasConfirmLines));
-        _confirm = new TaskCompletionSource<bool>();
         ConfirmVisible = true;
-        return _confirm.Task;
+        return _confirmGate.Request();
     }
 
     void CloseConfirm(bool result)
     {
         ConfirmVisible = false;
-        _confirm?.TrySetResult(result);
-        _confirm = null;
+        _confirmGate.Resolve(result);
     }
 
     // ---------- toast ----------

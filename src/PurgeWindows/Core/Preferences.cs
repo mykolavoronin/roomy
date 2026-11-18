@@ -10,8 +10,13 @@ public sealed record Preferences
     public bool WeeklyChecks { get; init; }
     public int LowSpaceGB { get; init; } = 10;
     public int CheckEveryMinutes { get; init; } = 30;
-    /// <summary>Where cleaned files go. The default sends "your call" items to the Recycle Bin.</summary>
+    /// <summary>Where cleaned files go. Every cleanable item goes to the Recycle Bin (D-21).</summary>
     public RemovalMode Removal { get; init; }
+    /// <summary>Whether cleans are recorded in cleanup history + the ledger. Default on.</summary>
+    public bool RecordCleanupHistory { get; init; } = true;
+    /// <summary>After how many days without changes a developer project counts as stale (0 = show all).
+    /// Allowed values: 0, 30, 90, 180, 365, 730. Default 180.</summary>
+    public int DevToolsStalenessDays { get; init; } = 180;
     public DateTimeOffset? SnoozedUntil { get; init; }
     public DateTimeOffset? LastNotification { get; init; }
     public DateTimeOffset? LastWeeklyCheck { get; init; }
@@ -20,8 +25,13 @@ public sealed record Preferences
     {
         LowSpaceGB = Math.Clamp(LowSpaceGB, 1, 500),
         CheckEveryMinutes = CheckEveryMinutes == 60 ? 60 : 30,
-        Removal = Removal is RemovalMode.ReviewToBin or RemovalMode.EverythingToBin or RemovalMode.EverythingPermanent
+        // RemovalMode.EverythingPermanent (numeric 2) was removed with D-21: a
+        // settings file that still holds it falls back to the default, which now
+        // also sends everything to the Recycle Bin.
+        Removal = Removal is RemovalMode.ReviewToBin or RemovalMode.EverythingToBin
             ? Removal : RemovalMode.ReviewToBin,
+        DevToolsStalenessDays = DevToolsStalenessDays is 0 or 30 or 90 or 180 or 365 or 730
+            ? DevToolsStalenessDays : 180,
     };
 }
 

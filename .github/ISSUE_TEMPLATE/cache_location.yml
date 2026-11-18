@@ -1,5 +1,5 @@
 name: Suggest something to clean
-description: A cache or junk folder Roomy should know about
+description: A cache or junk folder Purge for Windows should know about
 labels: [enhancement]
 body:
   - type: input
@@ -14,7 +14,7 @@ body:
     attributes:
       label: Folder location
       description: Use environment variables instead of your user name where you can.
-      placeholder: "%LOCALAPPDATA%\Example\Cache"
+      placeholder: '%LOCALAPPDATA%\Example\Cache'
     validations:
       required: true
   - type: textarea

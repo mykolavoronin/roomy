@@ -28,7 +28,7 @@
   </Resources>
 
   <Applications>
-    <Application Id="Roomy" Executable="Roomy.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="PurgeWindows" Executable="PurgeWindows.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
         DisplayName="{{DisplayName}}"
         Description="Free up space on your PC"
@@ -38,17 +38,22 @@
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
       </uap:VisualElements>
       <Extensions>
-        <desktop:Extension Category="windows.startupTask" Executable="Roomy.exe"
+        <desktop:Extension Category="windows.startupTask" Executable="PurgeWindows.exe"
                            EntryPoint="Windows.FullTrustApplication" uap10:Parameters="--background">
-          <desktop:StartupTask TaskId="RoomyStartup" Enabled="false" DisplayName="Roomy" />
+          <desktop:StartupTask TaskId="PurgeWindowsStartup" Enabled="false" DisplayName="Purge for Windows" />
         </desktop:Extension>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="purge-windows">
+            <uap:DisplayName>Purge for Windows</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
         <desktop:Extension Category="windows.toastNotificationActivation">
-          <desktop:ToastNotificationActivation ToastActivatorCLSID="9B46AA65-4F85-4C51-98A7-BAB484BCE995" />
+          <desktop:ToastNotificationActivation ToastActivatorCLSID="D5019D55-E3E9-47DF-AC3C-DFC06E481389" />
         </desktop:Extension>
         <com:Extension Category="windows.comServer">
           <com:ComServer>
-            <com:ExeServer Executable="Roomy.exe" Arguments="-ToastActivated" DisplayName="Roomy notifications">
-              <com:Class Id="9B46AA65-4F85-4C51-98A7-BAB484BCE995" DisplayName="Roomy notifications" />
+            <com:ExeServer Executable="PurgeWindows.exe" Arguments="-ToastActivated" DisplayName="Purge for Windows notifications">
+              <com:Class Id="D5019D55-E3E9-47DF-AC3C-DFC06E481389" DisplayName="Purge for Windows notifications" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>

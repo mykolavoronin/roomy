@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1" PrivateAssets="all" />
+    <Using Include="Xunit" />
+    <Compile Include="../../src/PurgeWindows/Core/Preferences.cs" Link="Core/Preferences.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/FileOps.cs" Link="Core/FileOps.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/SafeFs.cs" Link="Core/SafeFs.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/CrashLog.cs" Link="Core/CrashLog.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Platform.cs" Link="Core/Platform.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Env.cs" Link="Core/Env.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Native.cs" Link="Core/Native.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Models.cs" Link="Core/Models.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Cleaner.cs" Link="Core/Cleaner.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Scanner.cs" Link="Core/Scanner.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Steam.cs" Link="Core/Steam.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Format.cs" Link="Core/Format.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/WindowsFeatures.cs" Link="Core/WindowsFeatures.cs" />
+    <Compile Include="../../src/PurgeWindows/Localization/Loc.cs" Link="Localization/Loc.cs" />
+    <Compile Include="../../src/PurgeWindows/Localization/S.g.cs" Link="Localization/S.g.cs" />
+    <EmbeddedResource Include="../../src/PurgeWindows/Localization/Strings.resx" Link="Localization/Strings.resx">
+      <LogicalName>PurgeWindows.Localization.Strings.resources</LogicalName>
+    </EmbeddedResource>
+    <Compile Include="../../src/PurgeWindows/Services/SingleInstance.cs" Link="Services/SingleInstance.cs" />
+    <Compile Include="../../src/PurgeWindows/Services/NotificationService.cs" Link="Services/NotificationService.cs" />
+    <Compile Include="../../src/PurgeWindows/Services/StartupRegistration.cs" Link="Services/StartupRegistration.cs" />
+  </ItemGroup>
+</Project>

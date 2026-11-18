@@ -19,16 +19,16 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - run: dotnet build src/Roomy -c Release
-      - run: dotnet test tests/Roomy.Tests -c Release
+      - run: dotnet build src/PurgeWindows -c Release
+      - run: dotnet test tests/PurgeWindows.Tests -c Release
 
       - name: Publish single-file exe
         shell: pwsh
         run: |
-          dotnet publish src/Roomy -c Release -r win-x64 --self-contained `
+          dotnet publish src/PurgeWindows -c Release -r win-x64 --self-contained `
             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
             -p:EnableCompressionInSingleFile=true -p:DebugType=none -o dist/publish
-          Copy-Item dist/publish/Roomy.exe dist/Roomy-portable.exe
+          Copy-Item dist/publish/PurgeWindows.exe dist/PurgeWindows-portable.exe
 
       - name: Upload to the nightly release
         shell: pwsh
@@ -37,9 +37,9 @@ jobs:
         run: |
           gh release view "nightly" 2>$null
           if ($LASTEXITCODE -ne 0) { gh release create "nightly" --prerelease --title "Nightly build" --notes "Automatic build from the latest code on main. It may be unfinished — use the latest stable release for the tested version." }
-          gh release upload "nightly" dist/Roomy-portable.exe --clobber
+          gh release upload "nightly" dist/PurgeWindows-portable.exe --clobber
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Roomy-portable
-          path: dist/Roomy-portable.exe
+          name: PurgeWindows-portable
+          path: dist/PurgeWindows-portable.exe

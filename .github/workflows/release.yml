@@ -20,17 +20,17 @@ jobs:
       - name: Publish single-file exe
         shell: pwsh
         run: |
-          dotnet publish src/Roomy -c Release -r win-x64 --self-contained `
+          dotnet publish src/PurgeWindows -c Release -r win-x64 --self-contained `
             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
             -p:EnableCompressionInSingleFile=true -p:DebugType=none -o dist/publish
-          Copy-Item dist/publish/Roomy.exe dist/Roomy-portable.exe
+          Copy-Item dist/publish/PurgeWindows.exe dist/PurgeWindows-portable.exe
 
       - name: Build installer
         shell: pwsh
         run: |
           if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
           $version = "${{ github.ref_name }}".TrimStart("v")
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$version" installer/roomy.iss
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$version" installer/purge-windows.iss
 
       - name: Upload to the release
         shell: pwsh
@@ -38,5 +38,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "${{ github.ref_name }}" 2>$null
-          if ($LASTEXITCODE -ne 0) { gh release create "${{ github.ref_name }}" --generate-notes --title "Roomy ${{ github.ref_name }}" }
-          gh release upload "${{ github.ref_name }}" dist/Roomy-Setup.exe dist/Roomy-portable.exe --clobber
+          if ($LASTEXITCODE -ne 0) { gh release create "${{ github.ref_name }}" --generate-notes --title "Purge for Windows ${{ github.ref_name }}" }
+          gh release upload "${{ github.ref_name }}" dist/PurgeWindows-Setup.exe dist/PurgeWindows-portable.exe --clobber

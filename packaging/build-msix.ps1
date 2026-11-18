@@ -1,21 +1,21 @@
 <#
-  Builds dist\Roomy.msix for upload to the Microsoft Store.
+  Builds dist\PurgeWindows.msix for upload to the Microsoft Store.
   The Store signs the package itself, so no certificate is needed.
 
   Get the three identity values from Partner Center:
-    Apps and games → Roomy → Product management → Product identity
+    Apps and games → Purge for Windows → Product management → Product identity
 
   Example:
-    ./packaging/build-msix.ps1 -IdentityName "12345krezio.Roomy" `
+    ./packaging/build-msix.ps1 -IdentityName "12345YourPublisherId.PurgeWindows" `
                                -Publisher "CN=ABCDEF12-3456-7890-ABCD-EF1234567890" `
-                               -PublisherDisplayName "krezio" -Version 0.1.0
+                               -PublisherDisplayName "Mykola Voronin" -Version 0.1.0
   Pass -DisplayName with the exact product name you reserved (it must match).
 #>
 param(
   [Parameter(Mandatory)] [string] $IdentityName,
   [Parameter(Mandatory)] [string] $Publisher,
   [Parameter(Mandatory)] [string] $PublisherDisplayName,
-  [string] $DisplayName = "Roomy",
+  [string] $DisplayName = "Purge for Windows",
   [string] $Version = "0.1.4"
 )
 $ErrorActionPreference = "Stop"
@@ -25,14 +25,14 @@ $stage = Join-Path $dist "msix"
 $tools = Join-Path $dist "tools"
 
 # 1. Publish the app (self-contained single exe)
-dotnet publish "$root\src\Roomy" -c Release -r win-x64 --self-contained `
+dotnet publish "$root\src\PurgeWindows" -c Release -r win-x64 --self-contained `
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
   -p:EnableCompressionInSingleFile=true -p:DebugType=none -o "$dist\publish" | Out-Null
 
 # 2. Stage package contents
 Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force "$stage\Assets" | Out-Null
-Copy-Item "$dist\publish\Roomy.exe" $stage
+Copy-Item "$dist\publish\PurgeWindows.exe" $stage
 $v = ([version]$Version)
 $manifest = (Get-Content "$PSScriptRoot\AppxManifest.xml" -Raw) `
   -replace "{{IdentityName}}", $IdentityName `
@@ -55,6 +55,6 @@ if (-not $makeappx) {
 }
 
 # 4. Pack
-& $makeappx.FullName pack /d $stage /p "$dist\Roomy.msix" /o | Out-Null
+& $makeappx.FullName pack /d $stage /p "$dist\PurgeWindows.msix" /o | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "makeappx failed" }
-Write-Host "Built $dist\Roomy.msix  ->  upload it in Partner Center under Packages."
+Write-Host "Built $dist\PurgeWindows.msix  ->  upload it in Partner Center under Packages."

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Renamed to Purge for Windows.** The app, installer, portable build, settings folder, and all user-visible text now use the new name, starting the port of Purge (macOS) to Windows in C#/WPF. On first run, settings are copied from the old `%LOCALAPPDATA%\Roomy\settings.json` if the new location has none; the old folder is left untouched, and an old Roomy install keeps working side by side.
+- **New link scheme.** `purge-windows://` links now open the app (registered by the installer and the MSIX manifest). Link routes (scan, clean-safe, uninstall-review) arrive with the port phases.
 - **"Your call" items go to the Recycle Bin by default.** Old installers, big downloads and other files you're unsure about can now be restored if you change your mind. Caches and other safe stuff is still deleted directly, since apps rebuild it. Settings offers one choice for where cleaned files go: the default, everything to the Recycle Bin, or everything deleted permanently.
 - **Clearer progress and results.** While scanning, Roomy shows the check in progress plus how many items and how much space it has found so far. While cleaning, it shows the file being removed plus files removed and space freed so far. The done screen now shows total files removed next to the space freed, a per-category breakdown, and what went to the Recycle Bin vs what was deleted for good.
 - **Confirmation lists where everything goes.** Before cleaning, Roomy lists every selected category with whether it goes to the Recycle Bin or is deleted permanently.

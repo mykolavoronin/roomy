@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in Roomy didn't work the way it should
+description: Something in Purge for Windows didn't work the way it should
 labels: [bug]
 body:
   - type: textarea
@@ -16,7 +16,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Roomy version
+      label: Purge for Windows version
       description: Shown at the bottom of the Settings window.
       placeholder: "0.1.2"
     validations:
@@ -34,10 +34,10 @@ body:
   - type: dropdown
     id: install
     attributes:
-      label: How did you install Roomy?
+      label: How did you install Purge for Windows?
       options:
-        - Installer (Roomy-Setup.exe)
-        - Portable (Roomy-portable.exe)
+        - Installer (PurgeWindows-Setup.exe)
+        - Portable (PurgeWindows-portable.exe)
         - Microsoft Store
         - Built from source
   - type: textarea

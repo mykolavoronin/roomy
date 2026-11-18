@@ -3,9 +3,9 @@ name: Check
 on:
   push:
     branches: [main]
-    paths: ["src/**", "tests/**", ".github/workflows/check.yml"]
+    paths: ["src/**", "tests/**", "installer/**", "packaging/**", ".github/workflows/check.yml"]
   pull_request:
-    paths: ["src/**", "tests/**", ".github/workflows/check.yml"]
+    paths: ["src/**", "tests/**", "installer/**", "packaging/**", ".github/workflows/check.yml"]
 
 permissions:
   contents: read
@@ -18,5 +18,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - run: dotnet build src/Roomy -c Release
-      - run: dotnet test tests/Roomy.Tests -c Release
+      - run: dotnet build src/PurgeWindows -c Release
+      - run: dotnet test tests/PurgeWindows.Tests -c Release
+      - name: No user-visible "Roomy" branding remains
+        shell: pwsh
+        run: |
+          $files = "src/PurgeWindows/Localization/strings.json", "src/PurgeWindows/PurgeWindows.csproj", "installer/purge-windows.iss", "packaging/AppxManifest.xml"
+          $hits = Select-String -Path $files -Pattern "roomy" -SimpleMatch
+          if ($hits) { $hits | ForEach-Object { "::error file=$($_.Path),line=$($_.LineNumber)::Stale 'Roomy' branding" }; throw "Stale 'Roomy' branding found in user-visible files." }

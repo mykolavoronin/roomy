@@ -915,4 +915,61 @@ public static class S
 
     /// <summary>Windows settings can't be changed in demo mode.</summary>
     public static string WindowsSettingsDemoNote => Loc.Get("WindowsSettingsDemoNote");
+
+    /// <summary>Stop cleaning</summary>
+    public static string StopCleaning => Loc.Get("StopCleaning");
+
+    /// <summary>Stopping…</summary>
+    public static string StoppingCleaning => Loc.Get("StoppingCleaning");
+
+    /// <summary>{0} of {1} parts done</summary>
+    public static string PartsProgressLine => Loc.Get("PartsProgressLine");
+
+    /// <summary>Waiting</summary>
+    public static string PartStatusQueued => Loc.Get("PartStatusQueued");
+
+    /// <summary>Cleaning…</summary>
+    public static string PartStatusCleaning => Loc.Get("PartStatusCleaning");
+
+    /// <summary>Done</summary>
+    public static string PartStatusDone => Loc.Get("PartStatusDone");
+
+    /// <summary>Couldn't clean</summary>
+    public static string PartStatusFailed => Loc.Get("PartStatusFailed");
+
+    /// <summary>Stopped</summary>
+    public static string PartStatusCancelled => Loc.Get("PartStatusCancelled");
+
+    /// <summary>{0} to the Recycle Bin</summary>
+    public static string PartRecycledLine => Loc.Get("PartRecycledLine");
+
+    /// <summary>{0} skipped</summary>
+    public static string PartSkippedLine => Loc.Get("PartSkippedLine");
+
+    /// <summary>Cleanup stopped early — the totals above cover only what was actually cleaned.</summary>
+    public static string StoppedEarlyText => Loc.Get("StoppedEarlyText");
+
+    /// <summary>Couldn't clean: {0}</summary>
+    public static string FailedPartsLine => Loc.Get("FailedPartsLine");
+
+    /// <summary>{0} {1} · {2} to the Recycle Bin</summary>
+    public static string PartMovedLine => Loc.Get("PartMovedLine");
+
+    /// <summary>The Recycle Bin may not fit all of this</summary>
+    public static string BinCapacityTitle => Loc.Get("BinCapacityTitle");
+
+    /// <summary>This cleanup would move {0} to the Recycle Bin, but only about {1} fits. Files that don't fit will be skipped, never deleted for good. You can continue and skip what doesn't fit, or go back and pick less.</summary>
+    public static string BinCapacityBody => Loc.Get("BinCapacityBody");
+
+    /// <summary>Continue, skipping what doesn't fit</summary>
+    public static string BinCapacityContinue => Loc.Get("BinCapacityContinue");
+
+    /// <summary>The Recycle Bin is nearly full: about {0} fits, and this cleanup would move {1} there. Files that don't fit will be skipped.</summary>
+    public static string BinCapacityApproachingLine => Loc.Get("BinCapacityApproachingLine");
+
+    /// <summary>Stopping the cleanup so Purge for Windows can close.</summary>
+    public static string ClosingWhileCleaning => Loc.Get("ClosingWhileCleaning");
+
+    /// <summary>Stopping the cleanup so Purge for Windows can quit.</summary>
+    public static string QuittingWhileCleaning => Loc.Get("QuittingWhileCleaning");
 }

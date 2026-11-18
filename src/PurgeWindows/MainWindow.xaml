@@ -33,6 +33,50 @@
             </Grid>
         </DataTemplate>
 
+        <DataTemplate x:Key="CleanPartTemplate">
+            <Grid Margin="6,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid Margin="0,10,0,7">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="26" />
+                        <ColumnDefinition Width="32" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding StateGlyph}" Style="{StaticResource Icon}" HorizontalAlignment="Left"
+                               FontSize="12" Foreground="{Binding GlyphBrush}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="16"
+                               Foreground="{Binding TitleBrush}" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <TextBlock Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold"
+                                   Foreground="{Binding TitleBrush}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding DetailText}" FontSize="12" Foreground="{Binding DetailBrush}"
+                                   TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding ResultText}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                        <TextBlock Text="{Binding RecycledText}" FontSize="11.5" Foreground="{StaticResource WarnBrush}"
+                                   HorizontalAlignment="Right" Margin="0,1,0,0"
+                                   Visibility="{Binding HasRecycled, Converter={StaticResource VisIf}}" />
+                        <TextBlock Text="{Binding SkippedText}" FontSize="11.5" Foreground="{StaticResource FaintBrush}"
+                                   HorizontalAlignment="Right" Margin="0,1,0,0"
+                                   Visibility="{Binding HasSkipped, Converter={StaticResource VisIf}}" />
+                    </StackPanel>
+                </Grid>
+                <Grid Grid.Row="1" Height="3" Margin="26,0,12,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{Binding BarWidth}" />
+                        <ColumnDefinition Width="{Binding RestWidth}" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.ColumnSpan="2" CornerRadius="1.5" Background="{StaticResource Surface2Brush}" />
+                    <Border CornerRadius="1.5" Background="{Binding BarBrush}" />
+                </Grid>
+            </Grid>
+        </DataTemplate>
+
         <DataTemplate x:Key="ItemRowTemplate">
             <Grid Height="48">
                 <Grid.ColumnDefinitions>
@@ -532,23 +576,37 @@
 
                 <!-- ============ CLEANING ============ -->
                 <Grid x:Name="CleanView" Visibility="Collapsed">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="480" Margin="0,0,0,30">
-                        <Grid Width="112" Height="112">
-                            <c:Spinner Thickness="7" />
-                            <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="30" Foreground="{StaticResource AccentBrush}" />
-                        </Grid>
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="640" Margin="0,0,0,30">
                         <TextBlock Text="{x:Static loc:S.CleaningUp}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center"
-                                   Margin="0,28,0,8" FontFamily="{StaticResource DisplayFont}" />
-                        <TextBlock Text="{Binding CleanStep}" Foreground="{StaticResource MutedBrush}" FontSize="15" HorizontalAlignment="Center" />
+                                   FontFamily="{StaticResource DisplayFont}" />
+                        <TextBlock Text="{Binding CleanStep}" Foreground="{StaticResource MutedBrush}" FontSize="15" HorizontalAlignment="Center" Margin="0,8,0,0" />
                         <TextBlock Text="{Binding CleanCurrentItem}" Foreground="{StaticResource FaintBrush}" FontSize="13"
-                                   HorizontalAlignment="Center" Margin="0,6,0,0" TextTrimming="CharacterEllipsis" MaxWidth="480" />
-                        <c:UsageBar Height="8" Margin="0,28,0,0" Target="{Binding CleanProgress}"
+                                   HorizontalAlignment="Center" Margin="0,6,0,0" TextTrimming="CharacterEllipsis" MaxWidth="640" />
+                        <TextBlock Text="{Binding CleanCurrentPath}" Foreground="{StaticResource FaintBrush}" FontSize="12.5"
+                                   HorizontalAlignment="Center" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" MaxWidth="640"
+                                   Visibility="{Binding HasCleanCurrentPath, Converter={StaticResource VisIf}}" />
+                        <c:UsageBar Height="8" Margin="0,22,0,0" Target="{Binding CleanProgress}"
                                     Fill="{StaticResource AccentGradient}" Track="{StaticResource Surface2Brush}" />
+                        <TextBlock Text="{Binding CleanPartsText}" Foreground="{StaticResource FaintBrush}"
+                                   FontSize="12.5" HorizontalAlignment="Center" Margin="0,8,0,0" />
                         <TextBlock Text="{Binding CleanStatsText}" Foreground="{StaticResource MutedBrush}"
-                                   FontSize="13" HorizontalAlignment="Center" Margin="0,14,0,0" />
+                                   FontSize="13" HorizontalAlignment="Center" Margin="0,6,0,0" />
                         <TextBlock Text="{Binding CleanRecycledText}" Foreground="{StaticResource WarnBrush}"
                                    FontSize="12.5" HorizontalAlignment="Center" Margin="0,6,0,0"
                                    Visibility="{Binding HasCleanRecycled, Converter={StaticResource VisIf}}" />
+                        <Border Style="{StaticResource Card}" Margin="0,16,0,0" Padding="16,8"
+                                Visibility="{Binding HasCleanParts, Converter={StaticResource VisIf}}">
+                            <ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding CleanParts}" ItemTemplate="{StaticResource CleanPartTemplate}" />
+                            </ScrollViewer>
+                        </Border>
+                        <Button Style="{StaticResource SecondaryButton}" Command="{Binding CancelCleanCommand}"
+                                IsEnabled="{Binding CanCancelClean}" HorizontalAlignment="Center" Margin="0,16,0,0" Padding="20,10">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8BB;" Style="{StaticResource Icon}" FontSize="12" />
+                                <TextBlock Text="{Binding CancelButtonText}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
                         <TextBlock Text="{x:Static loc:S.InUseSkipped}" Foreground="{StaticResource FaintBrush}"
                                    FontSize="12.5" HorizontalAlignment="Center" Margin="0,14,0,0" />
                     </StackPanel>
@@ -571,6 +629,9 @@
                                          Foreground="{StaticResource AccentGradient}" HorizontalAlignment="Center" Duration="1500" />
                         <TextBlock Text="{Binding FilesRemovedText}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,4,0,0" />
                         <TextBlock Text="{Binding DoneSubtitle}" FontSize="15" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        <TextBlock Text="{x:Static loc:S.StoppedEarlyText}" FontSize="13" Foreground="{StaticResource WarnBrush}" TextWrapping="Wrap"
+                                   TextAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0" MaxWidth="480"
+                                   Visibility="{Binding WasCleanCancelled, Converter={StaticResource VisIf}}" />
 
                         <Border Style="{StaticResource Card}" Padding="18,14" Margin="0,22,0,0"
                                 Visibility="{Binding HasDoneBreakdown, Converter={StaticResource VisIf}}">
@@ -630,6 +691,8 @@
                                    TextAlignment="Center" Margin="0,14,0,0" Visibility="{Binding HasRecycled, Converter={StaticResource VisIf}}" />
                         <TextBlock Text="{Binding SkippedText}" FontSize="12.5" Foreground="{StaticResource FaintBrush}" TextWrapping="Wrap"
                                    TextAlignment="Center" Margin="0,14,0,0" Visibility="{Binding HasSkipped, Converter={StaticResource VisIf}}" />
+                        <TextBlock Text="{Binding FailedPartsText}" FontSize="12.5" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
+                                   TextAlignment="Center" Margin="0,14,0,0" Visibility="{Binding HasFailedParts, Converter={StaticResource VisIf}}" />
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,26,0,0">
                             <Button Style="{StaticResource PrimaryButton}" Command="{Binding ShareCommand}">

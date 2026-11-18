@@ -19,6 +19,8 @@ public sealed class DesktopController : IDisposable
     Forms.NotifyIcon? _tray;
     SettingsWindow? _settingsWindow;
     bool _quitting;
+    bool _closePending;
+    bool _quitPending;
     bool _disposed;
     public Preferences Preferences { get; private set; }
     public bool IsDemo => _vm.IsDemo;
@@ -87,12 +89,11 @@ public sealed class DesktopController : IDisposable
         menu.Items.Add(S.TrayResumeReminders, null, (_, _) => Handle("resume"));
         menu.Items.Add(S.TraySettings, null, (_, _) => OpenSettings());
         menu.Items.Add(new Forms.ToolStripSeparator());
-        var quit = menu.Items.Add(S.TrayQuit, null, (_, _) => Quit());
+        menu.Items.Add(S.TrayQuit, null, (_, _) => Quit());
         menu.Opening += (_, _) =>
         {
             pause.Enabled = Preferences.LowSpaceAlerts || Preferences.WeeklyChecks;
             menu.Items[4].Enabled = Preferences.SnoozedUntil > DateTimeOffset.UtcNow;
-            quit.Enabled = _vm.State != AppState.Cleaning;
         };
         _tray = new Forms.NotifyIcon
         {
@@ -166,10 +167,17 @@ public sealed class DesktopController : IDisposable
             _settingsWindow?.Close();
             _window.Hide();
         }
-        else if (_vm.State == AppState.Cleaning)
+        else if (_vm.IsCleaning && !_closePending)
         {
+            // Never trap the user in a cleaning run: request a stop and wait a bounded
+            // time off the UI thread, then quit whether or not the worker finished. A
+            // single in-flight shell call cannot be cancelled; the process exit abandons
+            // it, and the clean log + watchdog record hold the last-known state.
+            // Closing again while waiting quits immediately.
             e.Cancel = true;
-            _vm.ShowToast(S.FinishBeforeClosing);
+            _closePending = true;
+            _vm.ShowToast(S.ClosingWhileCleaning);
+            _ = CloseAfterCleanStopsAsync();
         }
         else
         {
@@ -179,16 +187,38 @@ public sealed class DesktopController : IDisposable
         }
     }
 
+    /// <summary>Bounded wait for a clean stop, then quit. Never blocks the UI thread.</summary>
+    async Task CloseAfterCleanStopsAsync()
+    {
+        _vm.RequestCleanStop();
+        await Task.WhenAny(_vm.CleanCompletion, Task.Delay(TimeSpan.FromSeconds(5)));
+        if (_disposed) return;
+        _quitting = true;
+        _window.Dispatcher.BeginInvoke(_quit);
+    }
+
     public void Quit()
     {
-        if (_vm.State == AppState.Cleaning)
+        if (_vm.IsCleaning && !_quitPending)
         {
+            _quitPending = true;
             Open();
-            _vm.ShowToast(S.FinishBeforeQuitting);
+            _vm.ShowToast(S.QuittingWhileCleaning);
+            _ = QuitAfterCleanStopsAsync();
             return;
         }
         _quitting = true;
         _quit();
+    }
+
+    /// <summary>Bounded wait for a clean stop, then quit. Never blocks the UI thread.</summary>
+    async Task QuitAfterCleanStopsAsync()
+    {
+        _vm.RequestCleanStop();
+        await Task.WhenAny(_vm.CleanCompletion, Task.Delay(TimeSpan.FromSeconds(5)));
+        if (_disposed) return;
+        _quitting = true;
+        _window.Dispatcher.BeginInvoke(_quit);
     }
 
     public void Dispose()

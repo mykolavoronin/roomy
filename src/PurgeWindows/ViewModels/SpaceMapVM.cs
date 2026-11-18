@@ -14,6 +14,7 @@ public sealed class SpaceMapVM : ObservableObject
     SpaceNode? _root, _current;
     DriveVM? _drive;
     long _unseen;
+    CancellationTokenSource? _scanCts;
 
     public SpaceMapVM(MainVM main)
     {
@@ -78,12 +79,24 @@ public sealed class SpaceMapVM : ObservableObject
         if (!HasData && !IsScanning) _ = ScanAsync();
     }
 
+    /// <summary>Stops a running space scan (a new scan, a cleanup, or leaving the tab).
+    /// The scan's token is wired through to the scanner, so the walk stops promptly
+    /// instead of running to completion in the background.</summary>
+    public void CancelScan()
+    {
+        try { _scanCts?.Cancel(); }
+        catch (ObjectDisposedException) { /* the scan already finished; nothing to stop */ }
+    }
+
     async Task ScanAsync()
     {
         if (IsScanning) return;
         var drive = _drive ?? _main.SystemDrive;
         if (drive is null) return;
         Select(drive);
+        _scanCts?.Dispose();
+        _scanCts = new CancellationTokenSource();
+        var ct = _scanCts.Token;
         IsScanning = true;
         HasData = false;
         ProgressText = S.Starting;
@@ -96,7 +109,7 @@ public sealed class SpaceMapVM : ObservableObject
                 for (int i = 1; i <= 12; i++)
                 {
                     ProgressText = $"{i * 41_337:N0} files · {Format.Bytes((long)(i * 18.9 * (1L << 30)))}";
-                    await Task.Delay(110);
+                    await Task.Delay(110, ct);
                 }
                 root = DemoData.SpaceTree();
                 big = DemoData.BigFiles();
@@ -107,7 +120,7 @@ public sealed class SpaceMapVM : ObservableObject
                 var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
                 timer.Tick += (_, _) => ProgressText = $"{scanner.Files:N0} files · {Format.Bytes(scanner.Bytes)}";
                 timer.Start();
-                try { root = await Task.Run(() => scanner.Scan(drive.Root)); }
+                try { root = await Task.Run(() => scanner.Scan(drive.Root, ct)); }
                 finally { timer.Stop(); }
                 big = scanner.BigFiles;
             }
@@ -120,6 +133,10 @@ public sealed class SpaceMapVM : ObservableObject
             Navigate(root);
             HasData = true;
         }
+        catch (OperationCanceledException)
+        {
+            // Stopped on purpose: no toast, no stale partial data. HasData stays false.
+        }
         catch (Exception ex)
         {
             _main.ShowToast(S.CantMapDrive + ex.Message);
@@ -127,6 +144,8 @@ public sealed class SpaceMapVM : ObservableObject
         finally
         {
             IsScanning = false;
+            _scanCts?.Dispose();
+            _scanCts = null;
         }
     }
 

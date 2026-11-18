@@ -100,7 +100,11 @@ public static class Catalog
         {
             Id = id, Title = S.CatRecycle, Glyph = G.Delete,
             Description = S.CatRecycleDesc,
-            Action = CleanAction.EmptyRecycleBin, SelectedByDefault = true, ShowItems = false,
+            // Review/open-only since the Phase 0 hang fix: Purge never empties the Trash,
+            // and the bin-emptying shell call was an uninterruptible silent phase (C5). The bin is
+            // measured and shown; emptying it is Windows' job. Wave 3 owns the review/open
+            // UI completion for this category.
+            Action = CleanAction.ReportOnly, SelectedByDefault = false, ShowItems = false,
         },
         "temp" => new CleanupCategory
         {

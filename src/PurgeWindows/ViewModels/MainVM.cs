@@ -26,6 +26,7 @@ public sealed class MainVM : ObservableObject
         HomeCommand = new RelayCommand(() => { RefreshDrives(); State = AppState.Home; });
         ConfirmYesCommand = new RelayCommand(() => CloseConfirm(true));
         ConfirmNoCommand = new RelayCommand(() => CloseConfirm(false));
+        CancelCleanCommand = new RelayCommand(CancelClean);
         SpaceMap = new SpaceMapVM(this);
         RefreshDrives();
         RefreshRemoval();
@@ -46,6 +47,7 @@ public sealed class MainVM : ObservableObject
     public RelayCommand HomeCommand { get; }
     public RelayCommand ConfirmYesCommand { get; }
     public RelayCommand ConfirmNoCommand { get; }
+    public RelayCommand CancelCleanCommand { get; }
 
     AppState _state = AppState.Home;
     public AppState State { get => _state; private set => Set(ref _state, value); }
@@ -142,6 +144,7 @@ public sealed class MainVM : ObservableObject
     {
         if (_busy) return;
         _busy = true;
+        SpaceMap.CancelScan();
         try
         {
             ScanSteps.Clear();
@@ -311,6 +314,92 @@ public sealed class MainVM : ObservableObject
         Raise(nameof(CleanRecycledText));
     }
 
+    // ---------- per-part cleaning progress ----------
+
+    CleanProgressModel? _cleanModel;
+    readonly Dictionary<string, CleanPartVM> _cleanRows = new(StringComparer.Ordinal);
+    CancellationTokenSource? _cleanCts;
+    bool _cancellingClean;
+    TaskCompletionSource<bool>? _cleanFinished;
+
+    /// <summary>Completes when the current cleanup finishes (or immediately when none runs).
+    /// The window-close path awaits it with a bound instead of trapping the user.</summary>
+    public Task CleanCompletion => _cleanFinished?.Task ?? Task.CompletedTask;
+
+    public bool IsCleaning => State == AppState.Cleaning;
+
+    /// <summary>The parts being cleaned, in the order they run, with live states and totals.</summary>
+    public ObservableCollection<CleanPartVM> CleanParts { get; } = [];
+    public bool HasCleanParts => CleanParts.Count > 0;
+
+    string _cleanPath = "";
+    /// <summary>The folder or file being processed right now.</summary>
+    public string CleanCurrentPath
+    {
+        get => _cleanPath;
+        private set { if (Set(ref _cleanPath, value)) Raise(nameof(HasCleanCurrentPath)); }
+    }
+    public bool HasCleanCurrentPath => CleanCurrentPath.Length > 0;
+
+    public string CleanPartsText => _cleanModel is null ? ""
+        : Loc.Format("PartsProgressLine", _cleanModel.PartsDone, _cleanModel.PartCount);
+
+    public bool CanCancelClean => _cleanCts is not null && !_cancellingClean && State == AppState.Cleaning;
+    public string CancelButtonText => _cancellingClean ? S.StoppingCleaning : S.StopCleaning;
+
+    void RaiseCancelState()
+    {
+        Raise(nameof(CanCancelClean));
+        Raise(nameof(CancelButtonText));
+    }
+
+    /// <summary>Stops after the current file operation / batch. Finished parts stay done;
+    /// partial totals are exact; nothing half-removed is claimed.</summary>
+    void CancelClean()
+    {
+        if (_cleanCts is null || _cancellingClean) return;
+        _cancellingClean = true;
+        CleanStep = S.StoppingCleaning;
+        RaiseCancelState();
+        _cleanCts.Cancel();
+    }
+
+    /// <summary>Requests a stop from outside the cleaning view (window close / quit).</summary>
+    public void RequestCleanStop() => CancelClean();
+
+    /// <summary>Applies one progress report to the part list. Runs on the UI thread.
+    /// The overall bar follows the engine's single fraction definition, never a second
+    /// computation; the model drives the per-part rows only.</summary>
+    void ApplyCleanPartReport(CleanProgress p)
+    {
+        CleanProgress = p.Fraction;
+        if (_cleanModel is null) return;
+        if (p.CategoryId.Length > 0 && _cleanRows.TryGetValue(p.CategoryId, out var row))
+        {
+            if (p.PartFailed)
+                _cleanModel.FailPart(p.CategoryId, p.PartFilesSoFar, p.PartFreedSoFar, p.PartRecycledSoFar, p.PartSkippedSoFar);
+            else if (p.PartDone)
+                _cleanModel.FinishPart(p.CategoryId, p.PartFilesSoFar, p.PartFreedSoFar, p.PartRecycledSoFar, p.PartSkippedSoFar);
+            else
+            {
+                // Live and cancelled reports alike: the cancelled report carries the
+                // part's final partial totals, which the row must show before the
+                // finish step marks it Cancelled.
+                _cleanModel.StartPart(p.CategoryId);
+                _cleanModel.UpdatePart(p.CategoryId, p.PartFraction, p.CurrentPath, p.CurrentItem,
+                    p.PartFilesSoFar, p.PartFreedSoFar, p.PartRecycledSoFar);
+            }
+            row.Refresh();
+        }
+        Raise(nameof(CleanPartsText));
+    }
+
+    void RefreshCleanRows()
+    {
+        foreach (var row in CleanParts) row.Refresh();
+        Raise(nameof(CleanPartsText));
+    }
+
     long _freed;
     public long Freed { get => _freed; private set => Set(ref _freed, value); }
 
@@ -334,6 +423,15 @@ public sealed class MainVM : ObservableObject
     public bool HasRecycled => Recycled > 0;
     public string RecycledText => Loc.Format("RecycledMessage", Format.Bytes(Recycled));
 
+    bool _wasCancelled;
+    /// <summary>True when the user stopped the cleanup early; the done screen says so plainly.</summary>
+    public bool WasCleanCancelled { get => _wasCancelled; private set => Set(ref _wasCancelled, value); }
+
+    /// <summary>Parts that failed outright. Named on the done screen instead of hidden.</summary>
+    public bool HasFailedParts => _cleanModel?.Parts.Any(p => p.State == CleanPartState.Failed) == true;
+    public string FailedPartsText => _cleanModel is null ? "" : Loc.Format("FailedPartsLine",
+        string.Join(", ", _cleanModel.Parts.Where(p => p.State == CleanPartState.Failed).Select(p => p.Title)));
+
     double _before, _after;
     public double BeforeFraction { get => _before; private set => Set(ref _before, value); }
     public double AfterFraction { get => _after; private set => Set(ref _after, value); }
@@ -349,15 +447,47 @@ public sealed class MainVM : ObservableObject
     async Task CleanAsync()
     {
         if (_busy) return;
-        var jobs = Categories.Where(c => c.CanSelect)
+        // Only Delete jobs clean anything. The Recycle Bin category is review-only now
+        // (its emptying action was removed with the hang fix); filtering here too keeps a
+        // stale selection from ever reaching the engine as a silent no-op.
+        var jobs = Categories.Where(c => c.CanSelect && c.Model.Action == CleanAction.Delete)
             .Select(c => new CleanJob(c.Model, c.SelectedItems()))
             .Where(j => j.Items.Count > 0)
             .ToList();
         if (jobs.Count == 0) return;
+        SpaceMap.CancelScan();
 
         // Read fresh so the choice also applies after "Restart as admin".
         var mode = IsDemo ? RemovalMode.ReviewToBin : new PreferencesStore(PreferencesStore.DefaultPath).Load().Removal;
         SetRemoval(mode);
+
+        // Pre-flight: when planned recycle bytes approach or exceed the remaining bin
+        // capacity, the user decides BEFORE the run starts. Files that cannot be recycled
+        // are skipped with a recorded reason — never a shell dialog, never silent
+        // permanent deletion. The budget snapshot is enforced by the engine per batch.
+        RecycleBinBudget? budget = null;
+        string preflightNote = "";
+        if (!IsDemo)
+        {
+            var check = await CheckRecyclePreflightAsync(jobs, mode);
+            if (check is { } c)
+            {
+                budget = c.Budget;
+                if (c.Preflight.ExceedsCapacity)
+                {
+                    var goOn = await ConfirmAsync(S.BinCapacityTitle,
+                        Loc.Format("BinCapacityBody", Format.Bytes(c.Preflight.PlannedBytes),
+                            Format.Bytes(c.Preflight.KnownRemainingBytes ?? 0)),
+                        S.BinCapacityContinue, []);
+                    if (!goOn) return;
+                }
+                else if (c.Preflight.ApproachingCapacity)
+                {
+                    preflightNote = Loc.Format("BinCapacityApproachingLine",
+                        Format.Bytes(c.Preflight.KnownRemainingBytes ?? 0), Format.Bytes(c.Preflight.PlannedBytes));
+                }
+            }
+        }
 
         // Confirm whenever "your call" files are involved, or when everything goes to the
         // Recycle Bin (the space is only freed once the bin is emptied). The dialog lists
@@ -374,68 +504,92 @@ public sealed class MainVM : ObservableObject
                 (_, true) => (S.DeleteTheseForGood, S.DeleteWarning, S.DeletePermanently),
                 _ => (S.ConfirmCleanTitle, S.ConfirmMixedBody, S.CleanUp),
             };
+            if (preflightNote.Length > 0) body += "\n\n" + preflightNote;
             if (!await ConfirmAsync(title, body, yes, lines)) return;
         }
 
         _busy = true;
+        _cleanCts = new CancellationTokenSource();
+        _cancellingClean = false;
+        _cleanFinished = new TaskCompletionSource<bool>();
+        var ct = _cleanCts.Token;
         try
         {
             var drive = SystemDrive;
             BeforeFraction = drive?.UsedFraction ?? 0;
             BeforeBrush = drive?.BarBrush;
             BeforeText = drive is null ? "" : Loc.Format("FreeBytes", Format.Bytes(drive.Free));
+
+            // The parts list is built before cleaning starts, in the order the cleaner
+            // will run them, so every part is visible as queued before the first starts.
+            _cleanModel = new CleanProgressModel(jobs.Select(j =>
+                (j.Category.Id, j.Category.Title, j.Category.Description, j.Category.Glyph,
+                    j.Items.Sum(i => i.Size))));
+            CleanParts.Clear();
+            _cleanRows.Clear();
+            foreach (var part in _cleanModel.Parts)
+            {
+                var row = new CleanPartVM(part);
+                CleanParts.Add(row);
+                _cleanRows[part.CategoryId] = row;
+            }
+            Raise(nameof(HasCleanParts));
+            Raise(nameof(CleanPartsText));
+
             CleanProgress = 0;
             CleanStep = S.GettingStarted;
             CleanCurrentItem = "";
+            CleanCurrentPath = "";
             CleanFilesSoFar = 0;
             CleanFreedSoFar = 0;
             CleanRecycledSoFar = 0;
             RaiseCleanStats();
             State = AppState.Cleaning;
+            RaiseCancelState();
 
+            // Progress<CleanProgress> captures the UI thread here, so every update below runs
+            // on it: the worker thread never touches the view models directly.
             var progress = new Progress<CleanProgress>(p =>
             {
-                CleanProgress = p.Fraction;
-                CleanStep = p.Step;
+                if (!_cancellingClean) CleanStep = p.Step;
                 CleanCurrentItem = p.CurrentItem;
+                if (p.CurrentPath.Length > 0) CleanCurrentPath = p.CurrentPath;
+                if (p.PartDone || p.PartFailed || p.Cancelled) CleanCurrentPath = "";
                 CleanFilesSoFar = p.FilesSoFar;
                 CleanFreedSoFar = p.FreedSoFar;
                 CleanRecycledSoFar = p.RecycledSoFar;
                 RaiseCleanStats();
+                ApplyCleanPartReport(p);
             });
 
+            var cleanOptions = new CleanOptions { Budget = budget };
             CleanResult r;
-            if (IsDemo)
+            bool cancelled = false;
+            try
             {
-                r = await DemoClean(jobs, mode, progress);
-                _demoFreed += r.Freed;
+                if (IsDemo)
+                {
+                    r = await DemoClean(jobs, mode, progress, ct);
+                    _demoFreed += r.Freed;
+                }
+                else
+                {
+                    // The token goes to Cleaner.Run, not to Task.Run: the engine converts
+                    // cancellation into a CleanCancelledException carrying exact partial
+                    // totals, instead of a bare TaskCanceledException with nothing in it.
+                    r = await Task.Run(() => Cleaner.Run(jobs, progress, mode, ct, cleanOptions));
+                    await Task.Delay(500);
+                }
             }
-            else
+            catch (CleanCancelledException ex)
             {
-                r = await Task.Run(() => Cleaner.Run(jobs, progress, mode));
-                await Task.Delay(500);
+                // Stopping keeps the exact partial result: the done screen shows what was
+                // actually cleaned, and says plainly that the run stopped early.
+                r = ex.Partial;
+                cancelled = true;
             }
 
-            Freed = r.Freed;
-            FilesRemoved = r.Files;
-            Skipped = r.Skipped;
-            Recycled = r.Recycled;
-            DoneCategories.Clear();
-            foreach (var c in (r.Categories ?? []).Where(c => c.Freed + c.Recycled > 0).OrderByDescending(c => c.Freed + c.Recycled))
-                DoneCategories.Add(new DoneCategoryVM(c));
-            RefreshDrives();
-            AfterFraction = drive?.UsedFraction ?? 0;
-            AfterText = drive is null ? "" : Loc.Format("FreeBytes", Format.Bytes(drive.Free));
-            DoneSubtitle = drive is null ? "" : Loc.Format("DriveNowFree", drive.Letter, Format.Bytes(drive.Free));
-            Raise(nameof(FilesRemovedText));
-            Raise(nameof(HasDoneBreakdown));
-            Raise(nameof(HasDoneSplit));
-            Raise(nameof(DoneSplitText));
-            Raise(nameof(HasSkipped));
-            Raise(nameof(SkippedText));
-            Raise(nameof(HasRecycled));
-            Raise(nameof(RecycledText));
-            State = AppState.Done;
+            FinishClean(r, drive, cancelled);
         }
         catch (Exception ex)
         {
@@ -445,44 +599,155 @@ public sealed class MainVM : ObservableObject
         finally
         {
             _busy = false;
+            _cleanCts?.Dispose();
+            _cleanCts = null;
+            _cleanFinished?.TrySetResult(true);
+            RaiseCancelState();
         }
+    }
+
+    void FinishClean(CleanResult r, DriveVM? drive, bool cancelled)
+    {
+        if (cancelled && _cleanModel != null)
+        {
+            _cleanModel.CancelRemaining();
+            RefreshCleanRows();
+        }
+        WasCleanCancelled = cancelled;
+        Freed = r.Freed;
+        FilesRemoved = r.Files;
+        Skipped = r.Skipped;
+        Recycled = r.Recycled;
+        DoneCategories.Clear();
+        foreach (var c in (r.Categories ?? []).Where(c => c.Freed + c.Recycled > 0).OrderByDescending(c => c.Freed + c.Recycled))
+            DoneCategories.Add(new DoneCategoryVM(c));
+        RefreshDrives();
+        AfterFraction = drive?.UsedFraction ?? 0;
+        AfterText = drive is null ? "" : Loc.Format("FreeBytes", Format.Bytes(drive.Free));
+        DoneSubtitle = drive is null ? "" : Loc.Format("DriveNowFree", drive.Letter, Format.Bytes(drive.Free));
+        Raise(nameof(FilesRemovedText));
+        Raise(nameof(HasDoneBreakdown));
+        Raise(nameof(HasDoneSplit));
+        Raise(nameof(DoneSplitText));
+        Raise(nameof(HasSkipped));
+        Raise(nameof(SkippedText));
+        Raise(nameof(HasRecycled));
+        Raise(nameof(RecycledText));
+        Raise(nameof(HasFailedParts));
+        Raise(nameof(FailedPartsText));
+        State = AppState.Done;
+        RaiseCancelState();
+    }
+
+    /// <summary>
+    /// Pre-flight Recycle Bin capacity check: planned recycle bytes per drive vs the bin
+    /// capacity remaining on each drive. Capacity reads run off the UI thread. Returns null
+    /// when nothing in the selection goes to the bin. Unknown capacity is reported as
+    /// unknown, never guessed.
+    /// </summary>
+    static async Task<(RecyclePreflight Preflight, RecycleBinBudget Budget)?> CheckRecyclePreflightAsync(
+        List<CleanJob> jobs, RemovalMode mode)
+    {
+        var planned = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+        foreach (var job in jobs)
+        {
+            if (!RemovalPolicy.GoesToBin(mode, job.Category)) continue;
+            foreach (var item in job.Items)
+            {
+                var drives = item.Paths
+                    .Select(p => Path.GetPathRoot(p))
+                    .Where(r => !string.IsNullOrEmpty(r))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                if (drives.Count == 0) continue;
+                long perDrive = item.Size / drives.Count;
+                for (int i = 0; i < drives.Count; i++)
+                {
+                    var root = drives[i]!;
+                    long share = perDrive + (i == 0 ? item.Size % drives.Count : 0);
+                    planned[root] = planned.TryGetValue(root, out var n) ? n + share : share;
+                }
+            }
+        }
+        if (planned.Count == 0) return null;
+        var capacities = await Task.Run(() => RecycleBinCapacity.QueryAll(planned.Keys));
+        var preflight = RecyclePreflight.Evaluate(planned, capacities);
+        CleanLog.WriteLine($"pre-flight planned={preflight.PlannedBytes} knownRemaining={preflight.KnownRemainingBytes} " +
+            $"exceeds={preflight.ExceedsCapacity} approaching={preflight.ApproachingCapacity} " +
+            $"unknown=[{string.Join(",", preflight.UnknownDrives)}] disabled=[{string.Join(",", preflight.DisabledDrives)}]");
+        return (preflight, new RecycleBinBudget(capacities));
     }
 
     static ConfirmLine ConfirmLineFor(CleanJob job, RemovalMode mode)
     {
-        var dest = job.Category.Action == CleanAction.EmptyRecycleBin ? ConfirmDestination.BinEmptied
-            : RemovalPolicy.GoesToBin(mode, job.Category) ? ConfirmDestination.Bin : ConfirmDestination.Deleted;
+        var dest = RemovalPolicy.GoesToBin(mode, job.Category) ? ConfirmDestination.Bin : ConfirmDestination.Deleted;
         return new ConfirmLine(job.Category.Title, Format.Bytes(job.Items.Sum(i => i.Size)), dest);
     }
 
-    async Task<CleanResult> DemoClean(List<CleanJob> jobs, RemovalMode mode, IProgress<CleanProgress> progress)
+    async Task<CleanResult> DemoClean(List<CleanJob> jobs, RemovalMode mode, IProgress<CleanProgress> progress, CancellationToken ct)
     {
         long total = Math.Max(1, jobs.Sum(j => j.Items.Sum(i => i.Size)));
         long done = 0, freed = 0, recycled = 0;
         int files = 0;
         var perCategory = new List<CategoryCleanResult>();
-        foreach (var j in jobs)
+        CleanJob? currentJob = null;
+        bool currentRecycle = false;
+        long jobFreed = 0, jobRecycled = 0;
+        int jobFiles = 0;
+        try
         {
-            var step = Loc.Format("CleaningCategory", j.Category.Title.ToLowerInvariant());
-            progress.Report(new CleanProgress((double)done / total, step, "", freed, recycled, files));
-            bool binJob = j.Category.Action == CleanAction.EmptyRecycleBin;
-            bool recycle = RemovalPolicy.GoesToBin(mode, j.Category);
-            long jobFreed = 0, jobRecycled = 0;
-            int jobFiles = 0;
-            foreach (var item in j.Items)
+            for (int partIndex = 0; partIndex < jobs.Count; partIndex++)
             {
-                if (binJob || !recycle) { jobFreed += item.Size; freed += item.Size; }
-                else { jobRecycled += item.Size; recycled += item.Size; }
-                files += item.FileCount;
-                jobFiles += item.FileCount;
-                done += item.Size;
-                progress.Report(new CleanProgress((double)done / total, step, item.Name, freed, recycled, files));
-                await Task.Delay(110);
+                var j = jobs[partIndex];
+                ct.ThrowIfCancellationRequested();
+                currentJob = j;
+                jobFreed = 0;
+                jobRecycled = 0;
+                jobFiles = 0;
+                var step = Loc.Format("CleaningCategory", j.Category.Title.ToLowerInvariant());
+                progress.Report(new CleanProgress((double)done / total, step, "", freed, recycled, files,
+                    CategoryId: j.Category.Id, PartIndex: partIndex, PartCount: jobs.Count));
+                currentRecycle = RemovalPolicy.GoesToBin(mode, j.Category);
+                long jobTotal = Math.Max(1, j.Items.Sum(i => i.Size));
+                long jobDoneBytes = 0;
+                foreach (var item in j.Items)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    if (!currentRecycle) { jobFreed += item.Size; freed += item.Size; }
+                    else { jobRecycled += item.Size; recycled += item.Size; }
+                    files += item.FileCount;
+                    jobFiles += item.FileCount;
+                    done += item.Size;
+                    jobDoneBytes += item.Size;
+                    progress.Report(new CleanProgress((double)done / total, step, item.Name, freed, recycled, files,
+                        CategoryId: j.Category.Id, PartIndex: partIndex, PartCount: jobs.Count,
+                        PartFraction: (double)jobDoneBytes / jobTotal, CurrentPath: item.Path,
+                        PartFilesSoFar: jobFiles, PartFreedSoFar: jobFreed, PartRecycledSoFar: jobRecycled));
+                    await Task.Delay(110, ct);
+                }
+                var dest = currentRecycle ? CleanDestination.Recycled : CleanDestination.Deleted;
+                perCategory.Add(new CategoryCleanResult(j.Category.Id, j.Category.Title, jobFreed, jobRecycled, 0, jobFiles, dest));
+                progress.Report(new CleanProgress((double)done / total, step, "", freed, recycled, files,
+                    CategoryId: j.Category.Id, PartIndex: partIndex, PartCount: jobs.Count,
+                    PartFraction: 1, PartFilesSoFar: jobFiles, PartFreedSoFar: jobFreed,
+                    PartRecycledSoFar: jobRecycled, PartDone: true));
+                currentJob = null;
+                await Task.Delay(120, ct);
             }
-            var dest = binJob ? CleanDestination.BinEmptied
-                : recycle ? CleanDestination.Recycled : CleanDestination.Deleted;
-            perCategory.Add(new CategoryCleanResult(j.Category.Id, j.Category.Title, jobFreed, jobRecycled, 0, jobFiles, dest));
-            await Task.Delay(120);
+        }
+        catch (OperationCanceledException)
+        {
+            // Same contract as the real cleaner: stopping keeps the partial result.
+            if (currentJob != null)
+            {
+                var dest = currentRecycle ? CleanDestination.Recycled : CleanDestination.Deleted;
+                perCategory.Add(new CategoryCleanResult(currentJob.Category.Id, currentJob.Category.Title,
+                    jobFreed, jobRecycled, 0, jobFiles, dest));
+                progress.Report(new CleanProgress((double)done / total, "", "", freed, recycled, files,
+                    CategoryId: currentJob.Category.Id, PartFilesSoFar: jobFiles,
+                    PartFreedSoFar: jobFreed, PartRecycledSoFar: jobRecycled, Cancelled: true));
+            }
+            throw new CleanCancelledException(new CleanResult(freed, 0, files, recycled, perCategory), ct);
         }
         await Task.Delay(300);
         progress.Report(new CleanProgress(1, S.AllDone, "", freed, recycled, files));
@@ -558,26 +823,23 @@ public sealed class MainVM : ObservableObject
 }
 
 /// <summary>Where one category's files go, as shown in the pre-clean confirmation.</summary>
-public enum ConfirmDestination { Deleted, Bin, BinEmptied }
+public enum ConfirmDestination { Deleted, Bin }
 
 public sealed record ConfirmLine(string Title, string SizeText, ConfirmDestination Destination)
 {
     public string DestinationText => Destination switch
     {
         ConfirmDestination.Bin => S.CatRecycle,
-        ConfirmDestination.BinEmptied => S.BinEmptied,
         _ => S.DeletedForGood,
     };
     public Brush DestinationBg => Res.Brush(Destination switch
     {
         ConfirmDestination.Bin => "WarnSoftBrush",
-        ConfirmDestination.BinEmptied => "MutedSoftBrush",
         _ => "DangerSoftBrush",
     });
     public Brush DestinationFg => Res.Brush(Destination switch
     {
         ConfirmDestination.Bin => "WarnBrush",
-        ConfirmDestination.BinEmptied => "MutedBrush",
         _ => "DangerBrush",
     });
 }
@@ -592,19 +854,16 @@ public sealed class DoneCategoryVM(CategoryCleanResult result)
     public string DestinationText => result.Destination switch
     {
         CleanDestination.Recycled => S.CatRecycle,
-        CleanDestination.BinEmptied => S.BinEmptied,
         _ => S.DeletedForGood,
     };
     public Brush DestinationBg => Res.Brush(result.Destination switch
     {
         CleanDestination.Recycled => "WarnSoftBrush",
-        CleanDestination.BinEmptied => "MutedSoftBrush",
         _ => "DangerSoftBrush",
     });
     public Brush DestinationFg => Res.Brush(result.Destination switch
     {
         CleanDestination.Recycled => "WarnBrush",
-        CleanDestination.BinEmptied => "MutedBrush",
         _ => "DangerBrush",
     });
 }

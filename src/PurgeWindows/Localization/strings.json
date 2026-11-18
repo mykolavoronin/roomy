@@ -1438,6 +1438,82 @@
     {
       "key": "WindowsSettingsDemoNote",
       "en": "Windows settings can't be changed in demo mode."
+    },
+    {
+      "key": "StopCleaning",
+      "en": "Stop cleaning"
+    },
+    {
+      "key": "StoppingCleaning",
+      "en": "Stopping…"
+    },
+    {
+      "key": "PartsProgressLine",
+      "en": "{0} of {1} parts done"
+    },
+    {
+      "key": "PartStatusQueued",
+      "en": "Waiting"
+    },
+    {
+      "key": "PartStatusCleaning",
+      "en": "Cleaning…"
+    },
+    {
+      "key": "PartStatusDone",
+      "en": "Done"
+    },
+    {
+      "key": "PartStatusFailed",
+      "en": "Couldn't clean"
+    },
+    {
+      "key": "PartStatusCancelled",
+      "en": "Stopped"
+    },
+    {
+      "key": "PartRecycledLine",
+      "en": "{0} to the Recycle Bin"
+    },
+    {
+      "key": "PartSkippedLine",
+      "en": "{0} skipped"
+    },
+    {
+      "key": "StoppedEarlyText",
+      "en": "Cleanup stopped early — the totals above cover only what was actually cleaned."
+    },
+    {
+      "key": "FailedPartsLine",
+      "en": "Couldn't clean: {0}"
+    },
+    {
+      "key": "PartMovedLine",
+      "en": "{0} {1} · {2} to the Recycle Bin"
+    },
+    {
+      "key": "BinCapacityTitle",
+      "en": "The Recycle Bin may not fit all of this"
+    },
+    {
+      "key": "BinCapacityBody",
+      "en": "This cleanup would move {0} to the Recycle Bin, but only about {1} fits. Files that don't fit will be skipped, never deleted for good. You can continue and skip what doesn't fit, or go back and pick less."
+    },
+    {
+      "key": "BinCapacityContinue",
+      "en": "Continue, skipping what doesn't fit"
+    },
+    {
+      "key": "BinCapacityApproachingLine",
+      "en": "The Recycle Bin is nearly full: about {0} fits, and this cleanup would move {1} there. Files that don't fit will be skipped."
+    },
+    {
+      "key": "ClosingWhileCleaning",
+      "en": "Stopping the cleanup so Purge for Windows can close."
+    },
+    {
+      "key": "QuittingWhileCleaning",
+      "en": "Stopping the cleanup so Purge for Windows can quit."
     }
   ]
 }

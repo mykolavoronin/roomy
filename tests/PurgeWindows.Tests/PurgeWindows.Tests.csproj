@@ -24,6 +24,12 @@
     <Compile Include="../../src/PurgeWindows/Core/Native.cs" Link="Core/Native.cs" />
     <Compile Include="../../src/PurgeWindows/Core/Models.cs" Link="Core/Models.cs" />
     <Compile Include="../../src/PurgeWindows/Core/Cleaner.cs" Link="Core/Cleaner.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/CleanParts.cs" Link="Core/CleanParts.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/CleanEvents.cs" Link="Core/CleanEvents.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/CleanLog.cs" Link="Core/CleanLog.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/CleanWatchdog.cs" Link="Core/CleanWatchdog.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/RecycleBinCapacity.cs" Link="Core/RecycleBinCapacity.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/OwnerTools.cs" Link="Core/OwnerTools.cs" />
     <Compile Include="../../src/PurgeWindows/Core/Scanner.cs" Link="Core/Scanner.cs" />
     <Compile Include="../../src/PurgeWindows/Core/Steam.cs" Link="Core/Steam.cs" />
     <Compile Include="../../src/PurgeWindows/Core/Format.cs" Link="Core/Format.cs" />

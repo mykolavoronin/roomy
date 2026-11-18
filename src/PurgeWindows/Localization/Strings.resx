@@ -913,4 +913,61 @@
   <data name="WindowsSettingsDemoNote" xml:space="preserve">
     <value>Windows settings can't be changed in demo mode.</value>
   </data>
+  <data name="StopCleaning" xml:space="preserve">
+    <value>Stop cleaning</value>
+  </data>
+  <data name="StoppingCleaning" xml:space="preserve">
+    <value>Stopping…</value>
+  </data>
+  <data name="PartsProgressLine" xml:space="preserve">
+    <value>{0} of {1} parts done</value>
+  </data>
+  <data name="PartStatusQueued" xml:space="preserve">
+    <value>Waiting</value>
+  </data>
+  <data name="PartStatusCleaning" xml:space="preserve">
+    <value>Cleaning…</value>
+  </data>
+  <data name="PartStatusDone" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="PartStatusFailed" xml:space="preserve">
+    <value>Couldn't clean</value>
+  </data>
+  <data name="PartStatusCancelled" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="PartRecycledLine" xml:space="preserve">
+    <value>{0} to the Recycle Bin</value>
+  </data>
+  <data name="PartSkippedLine" xml:space="preserve">
+    <value>{0} skipped</value>
+  </data>
+  <data name="StoppedEarlyText" xml:space="preserve">
+    <value>Cleanup stopped early — the totals above cover only what was actually cleaned.</value>
+  </data>
+  <data name="FailedPartsLine" xml:space="preserve">
+    <value>Couldn't clean: {0}</value>
+  </data>
+  <data name="PartMovedLine" xml:space="preserve">
+    <value>{0} {1} · {2} to the Recycle Bin</value>
+  </data>
+  <data name="BinCapacityTitle" xml:space="preserve">
+    <value>The Recycle Bin may not fit all of this</value>
+  </data>
+  <data name="BinCapacityBody" xml:space="preserve">
+    <value>This cleanup would move {0} to the Recycle Bin, but only about {1} fits. Files that don't fit will be skipped, never deleted for good. You can continue and skip what doesn't fit, or go back and pick less.</value>
+  </data>
+  <data name="BinCapacityContinue" xml:space="preserve">
+    <value>Continue, skipping what doesn't fit</value>
+  </data>
+  <data name="BinCapacityApproachingLine" xml:space="preserve">
+    <value>The Recycle Bin is nearly full: about {0} fits, and this cleanup would move {1} there. Files that don't fit will be skipped.</value>
+  </data>
+  <data name="ClosingWhileCleaning" xml:space="preserve">
+    <value>Stopping the cleanup so Purge for Windows can close.</value>
+  </data>
+  <data name="QuittingWhileCleaning" xml:space="preserve">
+    <value>Stopping the cleanup so Purge for Windows can quit.</value>
+  </data>
 </root>

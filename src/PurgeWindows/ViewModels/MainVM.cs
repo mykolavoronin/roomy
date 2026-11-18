@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 using PurgeWindows.Core;
 using PurgeWindows.Localization;
 using PurgeWindows.Services;
@@ -25,9 +26,13 @@ public sealed class MainVM : ObservableObject
         ShareCommand = new RelayCommand(() => ShareRequested?.Invoke(this, EventArgs.Empty));
         SettingsCommand = new RelayCommand(() => SettingsRequested?.Invoke(this, EventArgs.Empty));
         HomeCommand = new RelayCommand(() => { RefreshDrives(); State = AppState.Home; });
-        ConfirmYesCommand = new RelayCommand(() => CloseConfirm(true));
+        ConfirmYesCommand = new RelayCommand(() => CloseConfirm(true), () => ConfirmCanConfirm);
         ConfirmNoCommand = new RelayCommand(() => CloseConfirm(false));
         CancelCleanCommand = new RelayCommand(CancelClean);
+        StopScanCommand = new RelayCommand(StopScan,
+            () => State == AppState.Scanning && _scanCts is not null && !_scanCts.IsCancellationRequested);
+        _progressTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _progressTimer.Tick += (_, _) => OnProgressTick();
         SpaceMap = new SpaceMapVM(this);
         RefreshDrives();
         RefreshRemoval();
@@ -49,6 +54,41 @@ public sealed class MainVM : ObservableObject
     public RelayCommand ConfirmYesCommand { get; }
     public RelayCommand ConfirmNoCommand { get; }
     public RelayCommand CancelCleanCommand { get; }
+    public RelayCommand StopScanCommand { get; }
+
+    // ---------- progress tick: elapsed + stall evaluation, 1×/s ----------
+
+    /// <summary>
+    /// The 1s UI tick (§4.5): elapsed counters ticking are themselves aliveness
+    /// proof for the UI thread. The tick refreshes time/status lines and
+    /// evaluates the stall detectors; it never invents progress. Runs only
+    /// while a scan or clean is in flight.
+    /// </summary>
+    readonly DispatcherTimer _progressTimer;
+    readonly Stopwatch _runWatch = new();
+
+    /// <summary>Elapsed time of the current run, measured on the UI side. The
+    /// estimator buckets on engine event stamps; the few-ms skew between the
+    /// two clocks is immaterial at 1s granularity.</summary>
+    TimeSpan RunElapsed => _runWatch.Elapsed;
+
+    void StartProgressTick()
+    {
+        _runWatch.Restart();
+        _progressTimer.Start();
+    }
+
+    void StopProgressTick()
+    {
+        _progressTimer.Stop();
+        _runWatch.Stop();
+    }
+
+    void OnProgressTick()
+    {
+        if (State == AppState.Cleaning) RefreshCleanTimeLine();
+        else if (State == AppState.Scanning) RefreshScanStatus();
+    }
 
     AppState _state = AppState.Home;
     public AppState State { get => _state; private set => Set(ref _state, value); }
@@ -119,14 +159,43 @@ public sealed class MainVM : ObservableObject
 
     CancellationTokenSource? _scanCts;
 
-    /// <summary>Asks the running scan to stop between steps (engine support; the
-    /// scan-Stop button itself is a later wave). A stopped scan returns Home.</summary>
-    public void StopScan() => _scanCts?.Cancel();
+    /// <summary>Asks the running scan to stop between steps. A stopped scan returns Home.</summary>
+    public void StopScan()
+    {
+        _scanCts?.Cancel();
+        StopScanCommand.RaiseCanExecuteChanged();
+    }
 
     public ObservableCollection<ScanStepVM> ScanSteps { get; } = [];
 
     string _scanStep = "";
     public string ScanStep { get => _scanStep; private set => Set(ref _scanStep, value); }
+
+    /// <summary>The folder being scanned right now (monospaced path line). Updated
+    /// only when the folder changes, from the scanner's PathProgress plumbing.</summary>
+    string _scanPath = "";
+    public string ScanCurrentPath { get => _scanPath; private set => Set(ref _scanPath, value); }
+
+    /// <summary>Header status: "Step {n} of {m} · {elapsed} elapsed". Step counts
+    /// are facts, never presented as time progress — the scan has no bar.</summary>
+    string _scanStatus = "";
+    public string ScanStatusLineText { get => _scanStatus; private set => Set(ref _scanStatus, value); }
+
+    string _scanStall = "";
+    public string ScanStallText { get => _scanStall; private set => Set(ref _scanStall, value); }
+
+    Brush _scanStallBrush = Res.Brush("PurgeTextSecondaryBrush");
+    public Brush ScanStallBrush { get => _scanStallBrush; private set => Set(ref _scanStallBrush, value); }
+
+    /// <summary>Live-region announcement, updated only when the stall LEVEL
+    /// changes — per-second ticks are never announced.</summary>
+    string _scanStallAnnouncement = "";
+    public string ScanStallAnnouncement { get => _scanStallAnnouncement; private set => Set(ref _scanStallAnnouncement, value); }
+
+    readonly StallDetector _scanStallDetector = new();
+    StallLevel _scanStallLevel;
+    int _scanActiveIndex;
+    string _scanActiveTitle = "";
 
     long _scanFound;
     public long ScanFound { get => _scanFound; private set => Set(ref _scanFound, value); }
@@ -161,16 +230,34 @@ public sealed class MainVM : ObservableObject
             ScanFound = 0;
             ScanItemsFound = 0;
             ScanStepsDone = 0;
+            ScanCurrentPath = "";
+            _scanActiveIndex = 0;
+            _scanActiveTitle = Scanner.Steps.Count > 0 ? Scanner.Steps[0].Title : "";
+            _scanStallLevel = StallLevel.Normal;
+            ScanStallText = "";
+            ScanStallAnnouncement = "";
+            _scanStallDetector.Start(TimeSpan.Zero);
             RaiseScanTotals();
             IsCleanupTab = true;
             State = AppState.Scanning;
+            StopScanCommand.RaiseCanExecuteChanged();
+            StartProgressTick();
+            RefreshScanStatus();
 
             // The demo reuses the same queue with steps that return demo data,
             // so the scan view behaves identically in both modes.
             var steps = IsDemo
                 ? Scanner.Steps.Select(s => new ScanStep(s.Id, s.Title, _ => DemoData.Category(s.Id))).ToList()
                 : Scanner.Steps;
-            var ctx = new ScanContext { IsAdmin = IsAdmin, Token = _scanCts.Token };
+            var ctx = new ScanContext
+            {
+                IsAdmin = IsAdmin,
+                Token = _scanCts.Token,
+                // Wires Wave 3's PathProgress plumbing: the scan view shows the
+                // folder being looked at right now. Progress<T> marshals to the
+                // UI thread; reporting never affects the scan.
+                PathProgress = new Progress<string>(OnScanPath),
+            };
             // Progress<T> marshals events back to the UI thread; the coalescer
             // keeps Active updates to one per 140 ms while boundary events stay
             // immediate. The queue is the single progress/cancel contract for
@@ -207,6 +294,50 @@ public sealed class MainVM : ObservableObject
         finally
         {
             _busy = false;
+            StopProgressTick();
+            _scanStallDetector.Reset();
+            StopScanCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    /// <summary>One folder report from the scanner: update only on change, and a
+    /// path change counts as progress evidence on scan surfaces (the walker is
+    /// moving through new territory).</summary>
+    void OnScanPath(string path)
+    {
+        if (State != AppState.Scanning || path.Length == 0 || path == ScanCurrentPath) return;
+        ScanCurrentPath = path;
+        _scanStallDetector.ObserveProgress(RunElapsed);
+    }
+
+    /// <summary>Refreshes the scan status line and stall line from the 1s tick
+    /// and from scan events. Stall copy is factual-only: the scan's Stop button
+    /// sits below the list, visible without the copy promising anything.</summary>
+    void RefreshScanStatus()
+    {
+        int total = Scanner.Steps.Count;
+        int current = Math.Clamp(_scanActiveIndex + 1, 1, Math.Max(1, total));
+        ScanStatusLineText = Loc.Format("ScanStatusLine", current, total, TimeTagline.Format(RunElapsed));
+        var level = _scanStallDetector.Evaluate(RunElapsed);
+        string text = level switch
+        {
+            StallLevel.Slow => Loc.Format("StallSlowScan", _scanActiveTitle),
+            StallLevel.Silent => Loc.Format("StallSilent", (int)_scanStallDetector.ProgressStaleFor(RunElapsed).TotalSeconds),
+            StallLevel.Stuck => Loc.Format("StallStuckScan", _scanActiveTitle),
+            StallLevel.Dead => Loc.Format("StallDead", TimeTagline.Format(_scanStallDetector.ActivityStaleFor(RunElapsed))),
+            _ => "",
+        };
+        ScanStallText = text;
+        ScanStallBrush = Res.Brush(level switch
+        {
+            StallLevel.Stuck => "PurgeStatusCheckTextBrush",
+            StallLevel.Dead => "PurgeStatusDangerTextBrush",
+            _ => "PurgeTextSecondaryBrush",
+        });
+        if (level != _scanStallLevel)
+        {
+            _scanStallLevel = level;
+            if (level != StallLevel.Normal) ScanStallAnnouncement = text;
         }
     }
 
@@ -214,6 +345,15 @@ public sealed class MainVM : ObservableObject
     {
         if (e.StepIndex < 0 || e.StepIndex >= ScanSteps.Count) return;
         var row = ScanSteps[e.StepIndex];
+        _scanActiveIndex = e.StepIndex;
+        _scanActiveTitle = e.StepTitle;
+        // Step transitions and completions are progress evidence; a step
+        // starting, finishing, or failing all prove the scan is advancing.
+        // (ScanProgressEvent has no heartbeat/sequence fields yet — silence is
+        // measured from event arrival on the UI thread until the scan-queue
+        // wave adds the §4.6 common fields.)
+        if (e.State is not ScanStepState.Cancelled)
+            _scanStallDetector.ObserveProgress(RunElapsed);
         switch (e.State)
         {
             case ScanStepState.Active:
@@ -239,6 +379,7 @@ public sealed class MainVM : ObservableObject
             case ScanStepState.Cancelled:
                 break;
         }
+        RefreshScanStatus();
     }
 
     // ---------- results ----------
@@ -346,11 +487,156 @@ public sealed class MainVM : ObservableObject
     public bool HasCleanRecycled => CleanRecycledSoFar > 0;
     public string CleanRecycledText => Loc.Format("RecycledSoFar", Format.Bytes(CleanRecycledSoFar));
 
+    /// <summary>Bytes moved so far (deleted + recycled): the live figure.</summary>
+    public long CleanMovedSoFar => CleanFreedSoFar + CleanRecycledSoFar;
+
+    long _cleanTotal;
+    /// <summary>Planned total bytes for this run (scan sizes of executable parts).</summary>
+    public long CleanTotalBytes { get => _cleanTotal; private set => Set(ref _cleanTotal, value); }
+
+    public string CleanFigureOfTotalText => Loc.Format("CleanFigureOfTotal", Format.Bytes(CleanTotalBytes));
+
     void RaiseCleanStats()
     {
         Raise(nameof(CleanStatsText));
         Raise(nameof(HasCleanRecycled));
         Raise(nameof(CleanRecycledText));
+        Raise(nameof(CleanMovedSoFar));
+        Raise(nameof(CleanFigureOfTotalText));
+    }
+
+    // ---------- clean time line + stall line (§4.3–§4.5) ----------
+
+    ProgressEstimator? _cleanEstimator;
+    readonly StallDetector _cleanStallDetector = new();
+    StallLevel _cleanStallLevel;
+    TimeSpan? _stoppingSince;
+
+    string _cleanTimeLine = "";
+    /// <summary>
+    /// The time line: "Elapsed {elapsed} · Estimating time left…" until the
+    /// rate is known, then "Elapsed {elapsed} · About {remaining} left", with
+    /// the Almost-done / &gt;15-min / stopping forms. Empty until the 2s fade-in.
+    /// </summary>
+    public string CleanTimeLineText { get => _cleanTimeLine; private set => Set(ref _cleanTimeLine, value); }
+
+    bool _cleanTimeLineVisible;
+    /// <summary>True from 2s into the run: the time line fades in (code-behind)
+    /// instead of flashing for fast cleans.</summary>
+    public bool CleanTimeLineVisible { get => _cleanTimeLineVisible; private set => Set(ref _cleanTimeLineVisible, value); }
+
+    string _cleanStall = "";
+    public string CleanStallText { get => _cleanStall; private set => Set(ref _cleanStall, value); }
+
+    Brush _cleanStallBrush = Res.Brush("PurgeTextSecondaryBrush");
+    public Brush CleanStallBrush { get => _cleanStallBrush; private set => Set(ref _cleanStallBrush, value); }
+
+    /// <summary>Live-region announcement, updated only when the stall LEVEL
+    /// changes — per-second ticks are never announced.</summary>
+    string _cleanStallAnnouncement = "";
+    public string CleanStallAnnouncement { get => _cleanStallAnnouncement; private set => Set(ref _cleanStallAnnouncement, value); }
+
+    /// <summary>
+    /// Applies one sequenced clean event to the estimator and the stall
+    /// detector. Runs on the UI thread (Progress&lt;CleanEvent&gt;). Heartbeats
+    /// reset the activity clock only; file progress and part transitions are
+    /// progress evidence; a failed part ends its own clocks and its
+    /// unprocessed bytes leave the estimator's denominator.
+    /// </summary>
+    void OnCleanEvent(CleanEvent e)
+    {
+        if (State != AppState.Cleaning) return;
+        switch (e.Kind)
+        {
+            case CleanEventKind.Heartbeat:
+                _cleanStallDetector.ObserveActivity(e.Elapsed);
+                break;
+            case CleanEventKind.PartFailed:
+                _cleanEstimator?.ExcludeUnprocessed(Math.Max(0, e.PartTotalBytes - e.PartBytesAttempted));
+                _cleanStallDetector.EndUnit(e.Elapsed);
+                break;
+            case CleanEventKind.PartFinished:
+                _cleanEstimator?.Observe(e.Elapsed, e.BytesAttemptedSoFar);
+                _cleanStallDetector.EndUnit(e.Elapsed);
+                break;
+            case CleanEventKind.RunCancelled:
+                _cleanStallDetector.EndUnit(e.Elapsed);
+                break;
+            case CleanEventKind.FileProgress:
+            case CleanEventKind.PartStarted:
+            case CleanEventKind.Rebaselined:
+                _cleanEstimator?.Observe(e.Elapsed, e.BytesAttemptedSoFar);
+                _cleanStallDetector.ObserveProgress(e.Elapsed);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Refreshes the time line and stall line from the 1s tick. While
+    /// stopping, the estimate is frozen, stall levels are suppressed, and only
+    /// "Still stopping…" may appear after 30s.
+    /// </summary>
+    void RefreshCleanTimeLine()
+    {
+        var elapsed = RunElapsed;
+        if (!CleanTimeLineVisible && elapsed >= TimeSpan.FromSeconds(2))
+            CleanTimeLineVisible = true;
+        if (!CleanTimeLineVisible)
+        {
+            CleanTimeLineText = "";
+            return;
+        }
+
+        string elapsedText = TimeTagline.Format(elapsed);
+        if (_cancellingClean)
+        {
+            CleanTimeLineText = Loc.Format("TimeStopping", elapsedText);
+            CleanStallText = _stoppingSince is { } since &&
+                elapsed - since >= StallThresholds.StoppingReassuranceAfter
+                    ? S.StillStopping : "";
+            CleanStallBrush = Res.Brush("PurgeTextSecondaryBrush");
+            return;
+        }
+
+        var display = _cleanEstimator?.Evaluate(elapsed)
+            ?? new EstimateDisplay(EstimateState.Unknown, null);
+        CleanTimeLineText = display.State switch
+        {
+            EstimateState.Known => Loc.Format("TimeElapsedRemaining", elapsedText,
+                TimeTagline.Format(display.Remaining ?? TimeSpan.Zero)),
+            EstimateState.AlmostDone => Loc.Format("TimeElapsedAlmostDone", elapsedText),
+            EstimateState.MoreThan15Minutes => Loc.Format("TimeElapsedLongRemaining", elapsedText),
+            _ => Loc.Format("TimeElapsedEstimating", elapsedText),
+        };
+
+        var level = _cleanStallDetector.Evaluate(elapsed);
+        string item = CleanCurrentItem;
+        string text = level switch
+        {
+            StallLevel.Slow => item.Length > 0
+                ? Loc.Format("StallSlowClean", item) : S.StallSlowCleanNoItem,
+            StallLevel.Silent => Loc.Format("StallSilent",
+                (int)_cleanStallDetector.ProgressStaleFor(elapsed).TotalSeconds),
+            StallLevel.Stuck => item.Length > 0
+                ? Loc.Format("StallStuckClean", item) : S.StallStuckCleanNoItem,
+            StallLevel.Dead => Loc.Format("StallDeadClean",
+                TimeTagline.Format(_cleanStallDetector.ActivityStaleFor(elapsed))),
+            _ => "",
+        };
+        CleanStallText = text;
+        CleanStallBrush = Res.Brush(level switch
+        {
+            StallLevel.Stuck => "PurgeStatusCheckTextBrush",
+            StallLevel.Dead => "PurgeStatusDangerTextBrush",
+            _ => "PurgeTextSecondaryBrush",
+        });
+        if (level != _cleanStallLevel)
+        {
+            _cleanStallLevel = level;
+            if (level != StallLevel.Normal) CleanStallAnnouncement = text;
+        }
     }
 
     // ---------- per-part cleaning progress ----------
@@ -393,13 +679,17 @@ public sealed class MainVM : ObservableObject
     }
 
     /// <summary>Stops after the current file operation / batch. Finished parts stay done;
-    /// partial totals are exact; nothing half-removed is claimed.</summary>
+    /// partial totals are exact; nothing half-removed is claimed. Stopping freezes
+    /// the estimate and suppresses stall levels; only "Still stopping…" may appear.</summary>
     void CancelClean()
     {
         if (_cleanCts is null || _cancellingClean) return;
         _cancellingClean = true;
+        _stoppingSince = RunElapsed;
+        _cleanStallDetector.Suppressed = true;
         CleanStep = S.StoppingCleaning;
         RaiseCancelState();
+        RefreshCleanTimeLine();
         _cleanCts.Cancel();
     }
 
@@ -528,23 +818,43 @@ public sealed class MainVM : ObservableObject
             }
         }
 
-        // Confirm whenever "your call" files are involved, or when everything goes to the
-        // Recycle Bin (the space is only freed once the bin is emptied). The dialog lists
-        // every category with where it goes, so there are no surprises.
-        var lines = jobs.Select(j => ConfirmLineFor(j, mode)).ToList();
-        bool anyReview = jobs.Any(j => j.Category.Tier == SafetyLevel.CheckFirst);
+        // The confirmation dialog: Check-First sections first, Safe after, each
+        // with a plain-language explanation; the Check-First section requires an
+        // explicit acknowledgement, which becomes the engine confirmation. The
+        // dialog shows whenever Check-First items are involved, or when the
+        // removal setting routes everything through the bin (the space is only
+        // freed once the bin is emptied). A Safe-only run under the default
+        // setting shows no dialog (Purge §9.3: the selection rule IS the
+        // confirmation) and runs Safe-tier-only instead — the engine refuses
+        // anything non-Safe on that path.
+        // (The old all-deleted confirm branch is retired: RemovalPolicy sends
+        // every Delete job to the Recycle Bin, so no line could ever be
+        // "Deleted" and the branch was unreachable. Its strings stay in the
+        // catalogue for a future permanent-deletion flow.)
+        var plan = TieredConfirmPlan.FromJobs(jobs);
+        bool anyReview = plan.RequiresAcknowledgement;
+        bool dialogShown = false;
+        CheckFirstConfirmation? confirmation = null;
         if (anyReview || mode == RemovalMode.EverythingToBin)
         {
-            bool allBin = lines.All(l => l.Destination == ConfirmDestination.Bin);
-            bool allDeleted = lines.All(l => l.Destination == ConfirmDestination.Deleted);
-            var (title, body, yes) = (allBin, allDeleted) switch
+            dialogShown = true;
+            var lines = jobs.Select(j => ConfirmLineFor(j, mode)).ToList();
+            string title, body, yes;
+            if (anyReview)
             {
-                (true, _) => (S.MoveToBinTitle, S.MoveToBinWarning, S.MoveToBin),
-                (_, true) => (S.DeleteTheseForGood, S.DeleteWarning, S.DeletePermanently),
-                _ => (S.ConfirmCleanTitle, S.ConfirmMixedBody, S.CleanUp),
-            };
+                title = S.ConfirmCleanTitle;
+                body = S.ConfirmTieredBody;
+                yes = S.CleanUp;
+            }
+            else
+            {
+                title = S.MoveToBinTitle;
+                body = S.MoveToBinWarning;
+                yes = S.MoveToBin;
+            }
             if (preflightNote.Length > 0) body += "\n\n" + preflightNote;
-            if (!await ConfirmAsync(title, body, yes, lines)) return;
+            if (!await ConfirmAsync(title, body, yes, lines, selectionDialog: true)) return;
+            confirmation = plan.BuildConfirmation(ConfirmAcknowledged);
         }
 
         _busy = true;
@@ -582,9 +892,19 @@ public sealed class MainVM : ObservableObject
             CleanFilesSoFar = 0;
             CleanFreedSoFar = 0;
             CleanRecycledSoFar = 0;
+            CleanTotalBytes = jobs.Sum(j => j.Items.Sum(i => i.Size));
+            CleanTimeLineText = "";
+            CleanTimeLineVisible = false;
+            CleanStallText = "";
+            CleanStallAnnouncement = "";
+            _cleanStallLevel = StallLevel.Normal;
+            _stoppingSince = null;
+            _cleanEstimator = new ProgressEstimator(CleanTotalBytes);
+            _cleanStallDetector.Start(TimeSpan.Zero);
             RaiseCleanStats();
             State = AppState.Cleaning;
             RaiseCancelState();
+            StartProgressTick();
 
             // Progress<CleanProgress> captures the UI thread here, so every update below runs
             // on it: the worker thread never touches the view models directly.
@@ -599,9 +919,23 @@ public sealed class MainVM : ObservableObject
                 CleanRecycledSoFar = p.RecycledSoFar;
                 RaiseCleanStats();
                 ApplyCleanPartReport(p);
+                // Demo runs emit no clean events: their progress reports are
+                // the stall detector's only evidence. Real runs are fed by the
+                // sequenced event stream below, which carries heartbeats.
+                if (IsDemo) _cleanStallDetector.ObserveProgress(RunElapsed);
             });
 
-            var cleanOptions = new CleanOptions { Budget = budget };
+            // The sequenced event stream feeds the estimator + stall detector.
+            // Owner-tool consent and the Check-First confirmation come ONLY
+            // from the dialog path above; the no-dialog path runs Safe-only.
+            var cleanOptions = new CleanOptions
+            {
+                Budget = budget,
+                CheckFirstConfirmation = confirmation,
+                OwnerToolConsent = confirmation?.OwnerToolsConsented ?? false,
+                SafeTierOnly = !dialogShown,
+                Events = new Progress<CleanEvent>(OnCleanEvent),
+            };
             CleanResult r;
             bool cancelled = false;
             try
@@ -617,7 +951,6 @@ public sealed class MainVM : ObservableObject
                     // cancellation into a CleanCancelledException carrying exact partial
                     // totals, instead of a bare TaskCanceledException with nothing in it.
                     r = await Task.Run(() => Cleaner.Run(jobs, progress, mode, ct, cleanOptions));
-                    await Task.Delay(500);
                 }
             }
             catch (CleanCancelledException ex)
@@ -627,6 +960,12 @@ public sealed class MainVM : ObservableObject
                 r = ex.Partial;
                 cancelled = true;
             }
+
+            // Minimum dwell 1.2s (Purge minimumCleaningDwell): a tiny clean
+            // settles instead of flashing. The dwell covers the whole overlay
+            // lifetime, including the run itself.
+            var dwellLeft = TimeSpan.FromMilliseconds(1200) - RunElapsed;
+            if (dwellLeft > TimeSpan.Zero) await Task.Delay(dwellLeft);
 
             FinishClean(r, drive, cancelled);
         }
@@ -638,6 +977,9 @@ public sealed class MainVM : ObservableObject
         finally
         {
             _busy = false;
+            StopProgressTick();
+            _cleanEstimator = null;
+            _cleanStallDetector.Reset();
             _cleanCts?.Dispose();
             _cleanCts = null;
             _cleanFinished?.TrySetResult(true);
@@ -725,7 +1067,7 @@ public sealed class MainVM : ObservableObject
     static ConfirmLine ConfirmLineFor(CleanJob job, RemovalMode mode)
     {
         var dest = RemovalPolicy.GoesToBin(mode, job.Category) ? ConfirmDestination.Bin : ConfirmDestination.Deleted;
-        return new ConfirmLine(job.Category.Title, Format.Bytes(job.Items.Sum(i => i.Size)), dest);
+        return new ConfirmLine(job.Category.Title, Format.Bytes(job.Items.Sum(i => i.Size)), dest, job.Category.Tier);
     }
 
     async Task<CleanResult> DemoClean(List<CleanJob> jobs, RemovalMode mode, IProgress<CleanProgress> progress, CancellationToken ct)
@@ -819,17 +1161,69 @@ public sealed class MainVM : ObservableObject
     public string ConfirmBody { get => _confirmBody; private set => Set(ref _confirmBody, value); }
     public string ConfirmYesText { get => _confirmYes; private set => Set(ref _confirmYes, value); }
 
+    /// <summary>All lines, Check-First first (kept for the combined count).</summary>
     public ObservableCollection<ConfirmLine> ConfirmLines { get; } = [];
     public bool HasConfirmLines => ConfirmLines.Count > 0;
 
-    Task<bool> ConfirmAsync(string title, string body, string yes, IReadOnlyList<ConfirmLine> lines)
+    /// <summary>Check-First section, shown first (Purge confirm-sheet grouping).</summary>
+    public ObservableCollection<ConfirmLine> ConfirmCheckFirstLines { get; } = [];
+    public bool HasConfirmCheckFirstLines => ConfirmCheckFirstLines.Count > 0;
+
+    /// <summary>Safe section, shown after the Check-First section.</summary>
+    public ObservableCollection<ConfirmLine> ConfirmSafeLines { get; } = [];
+    public bool HasConfirmSafeLines => ConfirmSafeLines.Count > 0;
+
+    bool _confirmSelectionDialog;
+    bool _confirmAcknowledged;
+
+    /// <summary>
+    /// The Check-First acknowledgement checkbox. Required before confirming
+    /// whenever the dialog shows Check-First lines; reset on every dialog.
+    /// </summary>
+    public bool ConfirmAcknowledged
+    {
+        get => _confirmAcknowledged;
+        set
+        {
+            if (Set(ref _confirmAcknowledged, value))
+                ConfirmYesCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    /// <summary>True when this dialog requires the Check-First acknowledgement.</summary>
+    public bool ConfirmRequiresAcknowledgement { get; private set; }
+
+    /// <summary>
+    /// Whether the confirm button is enabled: a selection dialog needs at
+    /// least one line (no "clean 0 items") plus the acknowledgement when
+    /// Check-First lines are present. Simple dialogs (pre-flight) need neither.
+    /// </summary>
+    public bool ConfirmCanConfirm =>
+        !_confirmSelectionDialog ||
+        (ConfirmLines.Count > 0 && (!ConfirmRequiresAcknowledgement || ConfirmAcknowledged));
+
+    Task<bool> ConfirmAsync(string title, string body, string yes, IReadOnlyList<ConfirmLine> lines,
+        bool selectionDialog = false)
     {
         ConfirmTitle = title;
         ConfirmBody = body;
         ConfirmYesText = yes;
+        _confirmSelectionDialog = selectionDialog;
+        _confirmAcknowledged = false;
+        Raise(nameof(ConfirmAcknowledged));
+        ConfirmRequiresAcknowledgement = selectionDialog && lines.Any(l => l.IsCheckFirst);
+        Raise(nameof(ConfirmRequiresAcknowledgement));
         ConfirmLines.Clear();
-        foreach (var l in lines) ConfirmLines.Add(l);
+        ConfirmCheckFirstLines.Clear();
+        ConfirmSafeLines.Clear();
+        foreach (var l in lines.Where(l => l.IsCheckFirst)) ConfirmCheckFirstLines.Add(l);
+        foreach (var l in lines.Where(l => !l.IsCheckFirst)) ConfirmSafeLines.Add(l);
+        foreach (var l in ConfirmCheckFirstLines) ConfirmLines.Add(l);
+        foreach (var l in ConfirmSafeLines) ConfirmLines.Add(l);
         Raise(nameof(HasConfirmLines));
+        Raise(nameof(HasConfirmCheckFirstLines));
+        Raise(nameof(HasConfirmSafeLines));
+        ConfirmYesCommand.RaiseCanExecuteChanged();
         ConfirmVisible = true;
         return _confirmGate.Request();
     }
@@ -869,8 +1263,12 @@ public sealed class MainVM : ObservableObject
 /// <summary>Where one category's files go, as shown in the pre-clean confirmation.</summary>
 public enum ConfirmDestination { Deleted, Bin }
 
-public sealed record ConfirmLine(string Title, string SizeText, ConfirmDestination Destination)
+public sealed record ConfirmLine(string Title, string SizeText, ConfirmDestination Destination,
+    SafetyLevel Tier = SafetyLevel.Safe)
 {
+    /// <summary>True for Check-First lines (and any tier that is not Safe):
+    /// they render in the Check-First section, first.</summary>
+    public bool IsCheckFirst => Tier != SafetyLevel.Safe;
     public string DestinationText => Destination switch
     {
         ConfirmDestination.Bin => S.CatRecycle,

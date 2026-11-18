@@ -35,6 +35,35 @@ public partial class MainWindow : Window
         else if (e.PropertyName == nameof(MainVM.ToastVisible))
             ToastHost.BeginAnimation(OpacityProperty,
                 new DoubleAnimation(_vm.ToastVisible ? 1 : 0, TimeSpan.FromMilliseconds(220)));
+        else if (e.PropertyName == nameof(MainVM.CleanTimeLineVisible))
+            FadeCleanTimeLine(_vm.CleanTimeLineVisible);
+    }
+
+    /// <summary>
+    /// The clean time line fades in at 2s (0.3s easeInOut, Purge's crossfade
+    /// timing) so sub-2s runs never show estimating copy. When system
+    /// animations are off, the line appears instantly instead. Nothing else
+    /// about progress is animated here: the bar and figure animate in their
+    /// own controls, and no pulsing or fake motion is added anywhere.
+    /// </summary>
+    void FadeCleanTimeLine(bool visible)
+    {
+        if (!visible)
+        {
+            CleanTimeLine.BeginAnimation(OpacityProperty, null);
+            CleanTimeLine.Opacity = 0;
+            return;
+        }
+        if (!SystemParameters.MenuAnimation)
+        {
+            CleanTimeLine.BeginAnimation(OpacityProperty, null);
+            CleanTimeLine.Opacity = 1;
+            return;
+        }
+        CleanTimeLine.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(300))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
+        });
     }
 
     FrameworkElement ViewFor(AppState s) => s switch
@@ -54,6 +83,14 @@ public partial class MainWindow : Window
         var target = ViewFor(state);
         target.Visibility = Visibility.Visible;
         if (state == AppState.Results) CleanupScroll.ScrollToTop();
+        if (state == AppState.Cleaning)
+        {
+            // A fresh run starts with the time line hidden; it fades in at 2s
+            // via the CleanTimeLineVisible change. Reset here too, in case the
+            // property was already false and no change event fires.
+            CleanTimeLine.BeginAnimation(OpacityProperty, null);
+            CleanTimeLine.Opacity = 0;
+        }
 
         if (animate)
         {

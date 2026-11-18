@@ -1122,4 +1122,85 @@ public static class S
 
     /// <summary>Retry as administrator</summary>
     public static string FailRetryAdmin => Loc.Get("FailRetryAdmin");
+
+    /// <summary>Elapsed {0} · Estimating time left…</summary>
+    public static string TimeElapsedEstimating => Loc.Get("TimeElapsedEstimating");
+
+    /// <summary>Elapsed {0} · About {1} left</summary>
+    public static string TimeElapsedRemaining => Loc.Get("TimeElapsedRemaining");
+
+    /// <summary>Elapsed {0} · More than 15 minutes left</summary>
+    public static string TimeElapsedLongRemaining => Loc.Get("TimeElapsedLongRemaining");
+
+    /// <summary>Elapsed {0} · Almost done</summary>
+    public static string TimeElapsedAlmostDone => Loc.Get("TimeElapsedAlmostDone");
+
+    /// <summary>Stopping… · Elapsed {0}</summary>
+    public static string TimeStopping => Loc.Get("TimeStopping");
+
+    /// <summary>No update for {0} seconds.</summary>
+    public static string StallSilent => Loc.Get("StallSilent");
+
+    /// <summary>Still no response after {0}.</summary>
+    public static string StallDead => Loc.Get("StallDead");
+
+    /// <summary>Still working on {0} — taking a while.</summary>
+    public static string StallSlowClean => Loc.Get("StallSlowClean");
+
+    /// <summary>Still working on this part — taking a while.</summary>
+    public static string StallSlowCleanNoItem => Loc.Get("StallSlowCleanNoItem");
+
+    /// <summary>It may be stuck on {0}. You can stop safely — finished parts stay cleaned.</summary>
+    public static string StallStuckClean => Loc.Get("StallStuckClean");
+
+    /// <summary>It may be stuck on this part. You can stop safely — finished parts stay cleaned.</summary>
+    public static string StallStuckCleanNoItem => Loc.Get("StallStuckCleanNoItem");
+
+    /// <summary>Still no response after {0}. Stopping is safe — finished parts stay cleaned.</summary>
+    public static string StallDeadClean => Loc.Get("StallDeadClean");
+
+    /// <summary>Still stopping…</summary>
+    public static string StillStopping => Loc.Get("StillStopping");
+
+    /// <summary>Step {0} of {1} · {2} elapsed</summary>
+    public static string ScanStatusLine => Loc.Get("ScanStatusLine");
+
+    /// <summary>Still checking {0} — taking a while.</summary>
+    public static string StallSlowScan => Loc.Get("StallSlowScan");
+
+    /// <summary>The scan may be stuck on {0}.</summary>
+    public static string StallStuckScan => Loc.Get("StallStuckScan");
+
+    /// <summary>{0} files · {1} · {2} elapsed</summary>
+    public static string SpaceProgressLine => Loc.Get("SpaceProgressLine");
+
+    /// <summary>Still measuring — taking a while.</summary>
+    public static string StallSlowMeasure => Loc.Get("StallSlowMeasure");
+
+    /// <summary>Measuring may be stuck.</summary>
+    public static string StallStuckMeasure => Loc.Get("StallStuckMeasure");
+
+    /// <summary>Check First</summary>
+    public static string ConfirmCheckFirstHeading => Loc.Get("ConfirmCheckFirstHeading");
+
+    /// <summary>Safe to delete</summary>
+    public static string ConfirmSafeHeading => Loc.Get("ConfirmSafeHeading");
+
+    /// <summary>These may hold something you'd miss. If you're not sure about one, cancel and untick it. Most go to the Recycle Bin; anything cleared by an app's own cleanup tool is deleted for good.</summary>
+    public static string ConfirmCheckFirstExplainer => Loc.Get("ConfirmCheckFirstExplainer");
+
+    /// <summary>The app rebuilds these itself. They go to the Recycle Bin, and you can restore them if you change your mind.</summary>
+    public static string ConfirmSafeExplainer => Loc.Get("ConfirmSafeExplainer");
+
+    /// <summary>I've checked the items above and I'm happy for them to be cleaned.</summary>
+    public static string ConfirmCheckFirstAcknowledge => Loc.Get("ConfirmCheckFirstAcknowledge");
+
+    /// <summary>Check First items are listed first, then safe items. Everything goes to the Recycle Bin, so you can restore it if you change your mind — except anything an app's own cleanup tool clears.</summary>
+    public static string ConfirmTieredBody => Loc.Get("ConfirmTieredBody");
+
+    /// <summary>Stop scan</summary>
+    public static string StopScan => Loc.Get("StopScan");
+
+    /// <summary>of {0}</summary>
+    public static string CleanFigureOfTotal => Loc.Get("CleanFigureOfTotal");
 }

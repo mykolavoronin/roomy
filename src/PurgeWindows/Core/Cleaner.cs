@@ -101,6 +101,12 @@ public static class Cleaner
         // caller sends one anyway it stays silent and untouched, takes up no part in the
         // progress list, and contributes nothing to the total — exactly as before.
         var executable = jobs.Where(j => j.Category.Action == CleanAction.Delete).ToList();
+        // Tier enforcement, before anything is touched or reported: Check-First
+        // jobs need a confirmation covering them, Safe-tier-only runs refuse
+        // anything non-Safe, and owner-tool consent without a confirmation
+        // refuses the run. Throws InvalidOperationException; the UI cannot
+        // bypass it because it runs here, in the engine.
+        CleanOptions.ValidateRun(executable, options);
         var policy = options?.Policy ?? DeletionSafetyPolicy.Default;
         long total = Math.Max(1, executable.Sum(j => j.Items.Sum(i => i.Size)));
         long done = 0, freed = 0, skipped = 0, recycled = 0;
@@ -193,15 +199,15 @@ public static class Cleaner
                     // Owner tools first, where they exist: the tool's own clean command is
                     // vendor-correct for its cache. Owner commands delete for good, so
                     // they are a consented permanent action: they run ONLY for
-                    // Check-First items when the run carries explicit consent (Wave 4
-                    // sets it from the confirmation dialog). Without consent, the
-                    // non-destructive pre-step runs at most, and hand-deletion
-                    // recycles whatever remains, behind the fixed engine.
+                    // Check-First items when the run carries explicit consent AND a
+                    // confirmation covering this category that consents to owner
+                    // tools (both set from the confirmation dialog, and only there).
+                    // Without that, the non-destructive pre-step runs at most, and
+                    // hand-deletion recycles whatever remains, behind the fixed engine.
                     var tool = (options?.UseOwnerTools ?? true) ? OwnerTools.Match(item) : null;
                     if (tool != null)
                     {
-                        bool ownerConsent = (options?.OwnerToolConsent ?? false) &&
-                            job.Category.Tier == SafetyLevel.CheckFirst;
+                        bool ownerConsent = CleanOptions.OwnerToolAllowed(job, options);
                         if (ownerConsent && tool.CleanCommands.Count > 0)
                         {
                             // Heartbeats during the owner phase: the tool reports no

@@ -147,11 +147,86 @@ public sealed class CleanOptions
     /// <summary>
     /// Explicit consent to run owner-tool clean commands (permanent deletion) for
     /// Check-First items in this run. Default false: without it, owner commands
-    /// never run and every file goes to the Recycle Bin. Wave 4 sets this from the
-    /// confirmation dialog; nothing in Wave 3 sets it. Consent never applies to
-    /// Safe items — permanent removal is never Safe.
+    /// never run and every file goes to the Recycle Bin. It is honoured ONLY
+    /// alongside a <see cref="CheckFirstConfirmation"/> that covers the category
+    /// and itself consents to owner tools — setting this flag without such a
+    /// confirmation makes <see cref="ValidateRun"/> refuse the run. The
+    /// confirmation dialog path (MainVM) is the only caller that sets it, and
+    /// only together with the confirmation it just obtained. Consent never
+    /// applies to Safe items — permanent removal is never Safe.
     /// </summary>
     public bool OwnerToolConsent { get; init; }
+
+    /// <summary>
+    /// Proof that the user explicitly confirmed the Check-First categories in
+    /// this run, obtained from the confirmation dialog. Null means "no
+    /// Check-First confirmation": the engine then refuses every Check-First job
+    /// (see <see cref="ValidateRun"/>). Never defaulted, never set from
+    /// scan/selection code — only the confirmation dialog path constructs one,
+    /// via <see cref="CheckFirstConfirmation.FromConfirmationDialog"/>.
+    /// </summary>
+    public CheckFirstConfirmation? CheckFirstConfirmation { get; init; }
+
+    /// <summary>
+    /// Safe-tier-only rule: when true, the run may contain Safe jobs only and
+    /// any non-Safe executable job refuses the run. This is the rule for
+    /// confirmation-free flows — Purge's "Clean Safe Items" (§9.3: no sheet,
+    /// the selection rule IS the confirmation) and scheduled cleans, which are
+    /// Safe-tier-only always. The UI sets it on the no-dialog path; the engine
+    /// enforces it in <see cref="ValidateRun"/> with the UI bypassed.
+    /// </summary>
+    public bool SafeTierOnly { get; init; }
+
+    /// <summary>
+    /// Enforces the tier rules before any cleaning starts. Throws
+    /// <see cref="InvalidOperationException"/> — before the first event is
+    /// emitted and before anything is touched — when: a Safe-tier-only run
+    /// contains a non-Safe job; a Check-First job is not covered by the run's
+    /// confirmation; or owner-tool consent is set without a confirmation that
+    /// consents to owner tools. Safe jobs need no confirmation. Only executable
+    /// jobs are checked: ReportOnly/Steam/Settings jobs never clean and need
+    /// no confirmation.
+    /// </summary>
+    internal static void ValidateRun(IReadOnlyList<CleanJob> executable, CleanOptions? options)
+    {
+        var confirmation = options?.CheckFirstConfirmation;
+        if (options?.SafeTierOnly == true)
+        {
+            var nonSafe = executable
+                .Where(j => j.Category.Tier != SafetyLevel.Safe)
+                .Select(j => j.Category.Id)
+                .ToList();
+            if (nonSafe.Count > 0)
+                throw new InvalidOperationException(
+                    "Safe-only clean refused: non-Safe categories present: " +
+                    string.Join(", ", nonSafe) + ".");
+        }
+        var uncovered = executable
+            .Where(j => j.Category.Tier == SafetyLevel.CheckFirst &&
+                        confirmation?.Covers(j.Category.Id) != true)
+            .Select(j => j.Category.Id)
+            .ToList();
+        if (uncovered.Count > 0)
+            throw new InvalidOperationException(
+                "Check-First categories refused without an explicit confirmation: " +
+                string.Join(", ", uncovered) + ".");
+        if (options?.OwnerToolConsent == true && confirmation?.OwnerToolsConsented != true)
+            throw new InvalidOperationException(
+                "Owner-tool consent refused without a Check-First confirmation " +
+                "that consents to owner tools.");
+    }
+
+    /// <summary>
+    /// Whether an owner tool's clean commands may run for <paramref name="job"/>:
+    /// the run carries owner-tool consent AND a confirmation covering this
+    /// category that itself consents to owner tools AND the category is
+    /// Check-First. Safe items never qualify, whatever the flags say.
+    /// </summary>
+    internal static bool OwnerToolAllowed(CleanJob job, CleanOptions? options) =>
+        options?.OwnerToolConsent == true
+        && options.CheckFirstConfirmation is { OwnerToolsConsented: true } confirmation
+        && confirmation.Covers(job.Category.Id)
+        && job.Category.Tier == SafetyLevel.CheckFirst;
 
     /// <summary>
     /// The deletion safety policy gating this run. Null means the default policy:
@@ -174,6 +249,172 @@ public sealed class CleanOptions
     /// <summary>Silence that counts as "worker stuck". Default 15 seconds.</summary>
     public TimeSpan WatchdogStuckAfter { get; init; } = TimeSpan.FromSeconds(15);
 }
+
+/// <summary>
+/// Proof that the user explicitly confirmed the Check-First categories in one
+/// cleaning run. The ONLY sanctioned construction path is
+/// <see cref="FromConfirmationDialog"/>, called from the confirmation dialog
+/// flow after the user acknowledged the Check-First section; it is never
+/// defaulted and never constructed from scan/selection code. The engine
+/// (<see cref="CleanOptions.ValidateRun"/>) refuses every Check-First job
+/// whose category id is not covered. The record is single-run: it is created
+/// for one dialog answer and carried on that run's <see cref="CleanOptions"/>.
+/// </summary>
+public sealed class CheckFirstConfirmation
+{
+    readonly HashSet<string> _ids;
+
+    CheckFirstConfirmation(IEnumerable<string> categoryIds, bool ownerToolsConsented, DateTimeOffset confirmedAt)
+    {
+        CategoryIds = categoryIds.ToList();
+        _ids = new HashSet<string>(CategoryIds, StringComparer.Ordinal);
+        OwnerToolsConsented = ownerToolsConsented;
+        ConfirmedAt = confirmedAt;
+    }
+
+    /// <summary>Creates a confirmation for the categories the dialog just confirmed.</summary>
+    public static CheckFirstConfirmation FromConfirmationDialog(
+        IEnumerable<string> categoryIds, bool ownerToolsConsented = false) =>
+        new(categoryIds, ownerToolsConsented, DateTimeOffset.Now);
+
+    /// <summary>Category ids this confirmation covers, in dialog order.</summary>
+    public IReadOnlyList<string> CategoryIds { get; }
+
+    /// <summary>When the dialog answer was given.</summary>
+    public DateTimeOffset ConfirmedAt { get; }
+
+    /// <summary>
+    /// Whether the confirmation also consents to owner-tool clean commands
+    /// (permanent deletion) for the covered Check-First categories. Set only
+    /// from the dialog path, together with the acknowledgement.
+    /// </summary>
+    public bool OwnerToolsConsented { get; }
+
+    /// <summary>True when this confirmation covers <paramref name="categoryId"/>.</summary>
+    public bool Covers(string categoryId) => _ids.Contains(categoryId);
+}
+
+/// <summary>One line of a tiered confirmation plan: plain data, no UI.</summary>
+public sealed record ConfirmPlanLine(string CategoryId, string Title, string SizeText, SafetyLevel Tier);
+
+/// <summary>
+/// The pure confirmation-flow plan for one cleaning run: which jobs the dialog
+/// shows, split into sections, whether the Check-First acknowledgement is
+/// required, and whether confirming is allowed. The view model renders the
+/// sections and asks this plan for the engine confirmation — the dialog can
+/// never produce a confirmation the plan would not allow. Section order is
+/// Check-First first, then Safe (Purge's confirm-sheet grouping, EXTRACTION
+/// §9.2: Check First leads, each section headed by the safety name); within a
+/// section, largest first.
+/// </summary>
+public sealed class TieredConfirmPlan
+{
+    public TieredConfirmPlan(
+        IReadOnlyList<ConfirmPlanLine> checkFirstLines, IReadOnlyList<ConfirmPlanLine> safeLines)
+    {
+        CheckFirstLines = checkFirstLines;
+        SafeLines = safeLines;
+    }
+
+    /// <summary>Check-First lines, shown first. Empty when the run has none.</summary>
+    public IReadOnlyList<ConfirmPlanLine> CheckFirstLines { get; }
+
+    /// <summary>Safe lines, shown after the Check-First section.</summary>
+    public IReadOnlyList<ConfirmPlanLine> SafeLines { get; }
+
+    /// <summary>Lines across both sections.</summary>
+    public int TotalLines => CheckFirstLines.Count + SafeLines.Count;
+
+    /// <summary>True when the dialog must require the Check-First acknowledgement.</summary>
+    public bool RequiresAcknowledgement => CheckFirstLines.Count > 0;
+
+    /// <summary>
+    /// Whether confirming is allowed: something must be selected (Purge §9.1:
+    /// no sheet offers "Move 0 to Trash"), and the Check-First acknowledgement
+    /// must be given when required.
+    /// </summary>
+    public bool CanConfirm(bool acknowledged) =>
+        TotalLines > 0 && (!RequiresAcknowledgement || acknowledged);
+
+    /// <summary>
+    /// Builds the engine confirmation for this plan. Returns null when the run
+    /// has no Check-First lines (Safe runs need no confirmation); throws when
+    /// the acknowledgement is required but was not given. The confirmation
+    /// covers exactly the plan's Check-First categories and consents to owner
+    /// tools for them — the acknowledgement is the consent.
+    /// </summary>
+    public CheckFirstConfirmation? BuildConfirmation(bool acknowledged)
+    {
+        if (CheckFirstLines.Count == 0) return null;
+        if (!acknowledged)
+            throw new InvalidOperationException(
+                "Check-First confirmation requires the acknowledgement.");
+        return CheckFirstConfirmation.FromConfirmationDialog(
+            CheckFirstLines.Select(l => l.CategoryId), ownerToolsConsented: true);
+    }
+
+    /// <summary>
+    /// Builds a plan from executable (Delete) jobs with selected items.
+    /// Non-cleaning jobs never appear: they are not confirmed because they are
+    /// never cleaned.
+    /// </summary>
+    public static TieredConfirmPlan FromJobs(IEnumerable<CleanJob> jobs)
+    {
+        var sized = jobs
+            .Where(j => j.Category.Action == CleanAction.Delete && j.Items.Count > 0)
+            .Select(j => (Line: new ConfirmPlanLine(j.Category.Id, j.Category.Title,
+                Format.Bytes(j.Items.Sum(i => i.Size)), j.Category.Tier),
+                Size: j.Items.Sum(i => i.Size)))
+            .OrderByDescending(x => x.Size)
+            .Select(x => x.Line)
+            .ToList();
+        // Anything not Safe needs the acknowledgement: the Check-First section
+        // is the cautious home for any tier that is not proven Safe.
+        return new TieredConfirmPlan(
+            sized.Where(l => l.Tier != SafetyLevel.Safe).ToList(),
+            sized.Where(l => l.Tier == SafetyLevel.Safe).ToList());
+    }
+}
+
+/// <summary>
+/// Which operation a progress event belongs to (§4.6 common fields). Every
+/// event shape in the progress contract names its operation from this one
+/// enumeration, so later waves (registry, orphan, program detection, restore,
+/// health, environment) share the vocabulary instead of inventing their own.
+/// </summary>
+public enum ProgressOperation
+{
+    Clean,
+    Restore,
+    RegistryScan,
+    RegistryClean,
+    Scan,
+    SpaceMeasure,
+    OrphanScan,
+    ProgramDetect,
+    HealthCheck,
+    EnvProbe,
+}
+
+/// <summary>
+/// One space-map measuring snapshot (§4.6 <c>MeasureProgressEvent</c>): the
+/// common fields (sequence, engine timestamp, elapsed, operation, phase,
+/// heartbeat) plus files/bytes counted and the folder being walked.
+/// <see cref="CurrentPath"/> is empty until the scanner wave exposes the
+/// folder being walked (ambiguity A7): empty means unknown, never guessed.
+/// Today the view model synthesizes these snapshots from the scanner's polled
+/// counters; the scanner wave replaces the source without changing the shape.
+/// </summary>
+public sealed record MeasureProgressEvent(
+    long Sequence,
+    DateTimeOffset TimestampUtc,
+    TimeSpan Elapsed,
+    ProgressOperation Operation,
+    string Phase,
+    bool Heartbeat,
+    long FilesCounted,
+    long BytesCounted,
+    string CurrentPath);
 
 /// <summary>
 /// Sequences and timestamps clean events, forwards them to listeners without ever throwing

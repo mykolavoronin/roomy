@@ -85,7 +85,13 @@ public sealed class RecycleTests : IDisposable
         var caches = new CleanupCategory { Id = "apps", Title = "Caches", Description = "", Glyph = "" };
         caches.Items.Add(new CleanupItem { Name = "cache", Paths = [cacheDir], Size = 2048 });
 
-        var r = Cleaner.Run([new(downloads, downloads.Items), new(caches, caches.Items)], null);
+        // The Check-First category needs an explicit confirmation (Wave 4 tier
+        // enforcement); the test stands in for the confirmation dialog.
+        var options = new CleanOptions
+        {
+            CheckFirstConfirmation = CheckFirstConfirmation.FromConfirmationDialog(["downloads"]),
+        };
+        var r = Cleaner.Run([new(downloads, downloads.Items), new(caches, caches.Items)], null, options: options);
 
         // D-21: the Recycle Bin is the default for ALL cleanable items, Safe and
         // Check-First alike. Nothing is deleted for good by hand.
@@ -157,7 +163,11 @@ public sealed class RecycleTests : IDisposable
             var downloads = new CleanupCategory { Id = "downloads", Title = "Downloads", Description = "", Glyph = "", Tier = SafetyLevel.CheckFirst };
             downloads.Items.Add(new CleanupItem { Name = "msi", Paths = [download], Size = 4096, IsFile = true });
 
-            var r = Cleaner.Run([new(downloads, downloads.Items)], null, mode);
+            var options = new CleanOptions
+            {
+                CheckFirstConfirmation = CheckFirstConfirmation.FromConfirmationDialog(["downloads"]),
+            };
+            var r = Cleaner.Run([new(downloads, downloads.Items)], null, mode, options: options);
 
             Assert.Equal(4096, r.Recycled);
             Assert.Equal(0, r.Freed);

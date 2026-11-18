@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -59,6 +60,30 @@ public sealed class SpaceMapVM : ObservableObject
     string _progress = "";
     public string ProgressText { get => _progress; private set => Set(ref _progress, value); }
 
+    string _stall = "";
+    /// <summary>Factual-only stall line (no Stop exists on this surface).</summary>
+    public string StallText { get => _stall; private set => Set(ref _stall, value); }
+
+    Brush _stallBrush = Res.Brush("PurgeTextSecondaryBrush");
+    public Brush StallBrush { get => _stallBrush; private set => Set(ref _stallBrush, value); }
+
+    /// <summary>Live-region announcement, updated only when the stall LEVEL changes.</summary>
+    string _stallAnnouncement = "";
+    public string StallAnnouncement { get => _stallAnnouncement; private set => Set(ref _stallAnnouncement, value); }
+
+    /// <summary>
+    /// Measuring progress runs on polled snapshots: the scanner exposes no
+    /// current folder and no heartbeat (A7), so counter movement is both the
+    /// activity and the progress evidence — a frozen counter reads as silence,
+    /// honestly, and Slow never fires here. The scanner wave replaces the
+    /// polled snapshots with real events carrying CurrentPath.
+    /// </summary>
+    readonly StallDetector _stallDetector = new();
+    StallLevel _stallLevel;
+    readonly Stopwatch _measureWatch = new();
+    long _measureSequence;
+    long _lastFiles, _lastBytes;
+
     string _currentSize = "";
     public string CurrentSizeText { get => _currentSize; private set => Set(ref _currentSize, value); }
 
@@ -100,6 +125,14 @@ public sealed class SpaceMapVM : ObservableObject
         IsScanning = true;
         HasData = false;
         ProgressText = S.Starting;
+        StallText = "";
+        StallAnnouncement = "";
+        _stallLevel = StallLevel.Normal;
+        _lastFiles = 0;
+        _lastBytes = 0;
+        _measureSequence = 0;
+        _stallDetector.Start(TimeSpan.Zero);
+        _measureWatch.Restart();
         try
         {
             IReadOnlyList<BigFile> big;
@@ -108,7 +141,7 @@ public sealed class SpaceMapVM : ObservableObject
             {
                 for (int i = 1; i <= 12; i++)
                 {
-                    ProgressText = $"{i * 41_337:N0} files · {Format.Bytes((long)(i * 18.9 * (1L << 30)))}";
+                    OnMeasureEvent(MeasureSnapshot(i * 41_337, (long)(i * 18.9 * (1L << 30))));
                     await Task.Delay(110, ct);
                 }
                 root = DemoData.SpaceTree();
@@ -118,7 +151,7 @@ public sealed class SpaceMapVM : ObservableObject
             {
                 var scanner = new SpaceScanner();
                 var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
-                timer.Tick += (_, _) => ProgressText = $"{scanner.Files:N0} files · {Format.Bytes(scanner.Bytes)}";
+                timer.Tick += (_, _) => OnMeasureEvent(MeasureSnapshot(scanner.Files, scanner.Bytes));
                 timer.Start();
                 try { root = await Task.Run(() => scanner.Scan(drive.Root, ct)); }
                 finally { timer.Stop(); }
@@ -144,8 +177,60 @@ public sealed class SpaceMapVM : ObservableObject
         finally
         {
             IsScanning = false;
+            _measureWatch.Stop();
+            _stallDetector.Reset();
             _scanCts?.Dispose();
             _scanCts = null;
+        }
+    }
+
+    /// <summary>
+    /// Builds one measuring snapshot from polled counters. CurrentPath stays
+    /// empty: the scanner does not report the folder being walked yet (A7),
+    /// and an unknown folder is left unknown, never guessed.
+    /// </summary>
+    MeasureProgressEvent MeasureSnapshot(long files, long bytes) => new(
+        ++_measureSequence, DateTimeOffset.Now, _measureWatch.Elapsed,
+        ProgressOperation.SpaceMeasure, "Measuring", Heartbeat: false,
+        FilesCounted: files, BytesCounted: bytes, CurrentPath: "");
+
+    /// <summary>
+    /// Applies one measuring snapshot: the progress line (counts + elapsed, no
+    /// ETA — totals are unknown until the walk ends) and the stall line.
+    /// Counter movement is the only progress evidence available.
+    /// </summary>
+    void OnMeasureEvent(MeasureProgressEvent e)
+    {
+        ProgressText = Loc.Format("SpaceProgressLine",
+            e.FilesCounted.ToString("N0"), Format.Bytes(e.BytesCounted),
+            TimeTagline.Format(e.Elapsed));
+        if (e.FilesCounted != _lastFiles || e.BytesCounted != _lastBytes)
+        {
+            _lastFiles = e.FilesCounted;
+            _lastBytes = e.BytesCounted;
+            _stallDetector.ObserveProgress(e.Elapsed);
+        }
+        var level = _stallDetector.Evaluate(e.Elapsed);
+        StallText = level switch
+        {
+            StallLevel.Slow => S.StallSlowMeasure,
+            StallLevel.Silent => Loc.Format("StallSilent",
+                (int)_stallDetector.ProgressStaleFor(e.Elapsed).TotalSeconds),
+            StallLevel.Stuck => S.StallStuckMeasure,
+            StallLevel.Dead => Loc.Format("StallDead",
+                TimeTagline.Format(_stallDetector.ActivityStaleFor(e.Elapsed))),
+            _ => "",
+        };
+        StallBrush = Res.Brush(level switch
+        {
+            StallLevel.Stuck => "PurgeStatusCheckTextBrush",
+            StallLevel.Dead => "PurgeStatusDangerTextBrush",
+            _ => "PurgeTextSecondaryBrush",
+        });
+        if (level != _stallLevel)
+        {
+            _stallLevel = level;
+            if (level != StallLevel.Normal) StallAnnouncement = StallText;
         }
     }
 

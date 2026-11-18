@@ -215,6 +215,25 @@
             </Button>
         </DataTemplate>
 
+        <DataTemplate x:Key="ConfirmLineTemplate">
+            <Grid Margin="0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Title}" FontSize="13.5" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                <TextBlock Grid.Column="1" Text="{Binding SizeText}" FontSize="13.5" FontWeight="SemiBold"
+                           VerticalAlignment="Center" Margin="0,0,10,0" />
+                <Border Grid.Column="2" CornerRadius="9" Padding="8,3" Background="{Binding DestinationBg}"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="{Binding DestinationText}" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{Binding DestinationFg}" />
+                </Border>
+            </Grid>
+        </DataTemplate>
+
     </Window.Resources>
 
     <Grid x:Name="Root" Background="{StaticResource BgBrush}">
@@ -339,17 +358,25 @@
                         </Grid>
                         <TextBlock Text="{x:Static loc:S.Scanning}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center"
                                    Margin="0,28,0,8" FontFamily="{StaticResource DisplayFont}" />
-                        <TextBlock Text="{Binding ScanStep}" Foreground="{StaticResource MutedBrush}" FontSize="13.5"
-                                   HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="640" />
+                        <TextBlock Text="{Binding ScanStatusLineText}" Foreground="{StaticResource PurgeTextSecondaryBrush}"
+                                   FontSize="{StaticResource PurgeFontSizeMetadata}" FontFamily="{StaticResource PurgeFontText}"
+                                   HorizontalAlignment="Center" MinHeight="16" />
+                        <TextBlock Text="{Binding ScanStep}" Foreground="{StaticResource MutedBrush}" FontSize="13.5" FontWeight="Medium"
+                                   HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="640" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding ScanCurrentPath}" Foreground="{StaticResource PurgeTextSecondaryBrush}"
+                                   FontSize="{StaticResource PurgeFontSizeMetadata}" FontFamily="{StaticResource PurgeFontMono}"
+                                   HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="640" Margin="0,8,0,0" MinHeight="16" />
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
                             <TextBlock Text="{x:Static loc:S.FoundPrefix}" Foreground="{StaticResource MutedBrush}" FontSize="15" />
                             <c:AnimatedBytes Bytes="{Binding ScanFound}" Foreground="{StaticResource AccentBrush}" FontSize="15" FontWeight="SemiBold" Duration="500" />
                             <TextBlock Text="{x:Static loc:S.FoundSuffix}" Foreground="{StaticResource MutedBrush}" FontSize="15" />
                         </StackPanel>
-                        <c:UsageBar Width="320" Height="4" Margin="0,16,0,0" Target="{Binding ScanFraction}"
-                                    Fill="{StaticResource AccentBrush}" Track="{StaticResource Surface2Brush}" />
                         <TextBlock Text="{Binding ScanTotalsText}" Foreground="{StaticResource FaintBrush}" FontSize="12.5"
                                    HorizontalAlignment="Center" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding ScanStallText}" Foreground="{Binding ScanStallBrush}"
+                                   FontSize="{StaticResource PurgeFontSizeMetadata}" FontFamily="{StaticResource PurgeFontText}"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0" MinHeight="16"
+                                   AutomationProperties.LiveSetting="Polite" />
                         <Border Style="{StaticResource Card}" Margin="0,22,0,0" Padding="16,12">
                             <ItemsControl ItemsSource="{Binding ScanSteps}" ItemTemplate="{StaticResource ScanStepTemplate}">
                                 <ItemsControl.ItemsPanel>
@@ -359,6 +386,10 @@
                                 </ItemsControl.ItemsPanel>
                             </ItemsControl>
                         </Border>
+                        <Button Style="{StaticResource SecondaryButton}" Content="{x:Static loc:S.StopScan}"
+                                Command="{Binding StopScanCommand}" HorizontalAlignment="Center" Margin="0,16,0,0" Padding="20,10" />
+                        <TextBlock Text="{Binding ScanStallAnnouncement}" Height="0" Opacity="0"
+                                   AutomationProperties.LiveSetting="Assertive" />
                     </StackPanel>
                 </Grid>
 
@@ -505,6 +536,12 @@
                                         <c:Spinner Width="56" Height="56" Thickness="5" />
                                         <TextBlock Text="{x:Static loc:S.MappingDrive}" FontSize="17" FontWeight="SemiBold" Margin="0,18,0,4" HorizontalAlignment="Center" />
                                         <TextBlock Text="{Binding ProgressText}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="{Binding StallText}" Foreground="{Binding StallBrush}"
+                                                   FontSize="{StaticResource PurgeFontSizeMetadata}" FontFamily="{StaticResource PurgeFontText}"
+                                                   HorizontalAlignment="Center" Margin="0,8,0,0" MinHeight="16"
+                                                   AutomationProperties.LiveSetting="Polite" />
+                                        <TextBlock Text="{Binding StallAnnouncement}" Height="0" Opacity="0"
+                                                   AutomationProperties.LiveSetting="Assertive" />
                                     </StackPanel>
                                     <ScrollViewer Padding="8,0,8,10" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                                                   Visibility="{Binding HasData, Converter={StaticResource VisIf}}">
@@ -579,14 +616,27 @@
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="640" Margin="0,0,0,30">
                         <TextBlock Text="{x:Static loc:S.CleaningUp}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center"
                                    FontFamily="{StaticResource DisplayFont}" />
-                        <TextBlock Text="{Binding CleanStep}" Foreground="{StaticResource MutedBrush}" FontSize="15" HorizontalAlignment="Center" Margin="0,8,0,0" />
-                        <TextBlock Text="{Binding CleanCurrentItem}" Foreground="{StaticResource FaintBrush}" FontSize="13"
-                                   HorizontalAlignment="Center" Margin="0,6,0,0" TextTrimming="CharacterEllipsis" MaxWidth="640" />
-                        <TextBlock Text="{Binding CleanCurrentPath}" Foreground="{StaticResource FaintBrush}" FontSize="12.5"
-                                   HorizontalAlignment="Center" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" MaxWidth="640"
-                                   Visibility="{Binding HasCleanCurrentPath, Converter={StaticResource VisIf}}" />
-                        <c:UsageBar Height="8" Margin="0,22,0,0" Target="{Binding CleanProgress}"
-                                    Fill="{StaticResource AccentGradient}" Track="{StaticResource Surface2Brush}" />
+                        <c:AnimatedBytes Bytes="{Binding CleanMovedSoFar}" FontSize="{StaticResource PurgeFontSizeDisplay}" FontWeight="Bold"
+                                         FontFamily="{StaticResource PurgeFontFigures}" HorizontalAlignment="Center" Duration="450" Margin="0,16,0,0" />
+                        <TextBlock Text="{Binding CleanFigureOfTotalText}" Foreground="{StaticResource PurgeTextSecondaryBrush}"
+                                   FontSize="{StaticResource PurgeFontSizeSectionTitle}" FontFamily="{StaticResource PurgeFontText}"
+                                   HorizontalAlignment="Center" Margin="0,4,0,0" MinHeight="20" />
+                        <c:UsageBar Height="4" Margin="0,16,0,0" Target="{Binding CleanProgress}"
+                                    Fill="{StaticResource PurgeTextPrimaryBrush}" Track="{StaticResource PurgeFillSecondaryPressedBrush}" />
+                        <TextBlock Text="{Binding CleanStep}" Foreground="{StaticResource MutedBrush}" FontSize="15" FontWeight="Medium" HorizontalAlignment="Center" Margin="0,8,0,0"
+                                   TextTrimming="CharacterEllipsis" MaxWidth="640" />
+                        <TextBlock Text="{Binding CleanCurrentPath}" Foreground="{StaticResource PurgeTextSecondaryBrush}"
+                                   FontSize="{StaticResource PurgeFontSizeMetadata}" FontFamily="{StaticResource PurgeFontMono}"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0" TextTrimming="CharacterEllipsis" MaxWidth="640" MinHeight="16" />
+                        <TextBlock x:Name="CleanTimeLine" Text="{Binding CleanTimeLineText}" Foreground="{StaticResource PurgeTextSecondaryBrush}"
+                                   FontSize="{StaticResource PurgeFontSizeMetadata}" FontFamily="{StaticResource PurgeFontText}"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0" MinHeight="16" Opacity="0" />
+                        <TextBlock Text="{Binding CleanStallText}" Foreground="{Binding CleanStallBrush}"
+                                   FontSize="{StaticResource PurgeFontSizeMetadata}" FontFamily="{StaticResource PurgeFontText}"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0" MinHeight="16"
+                                   AutomationProperties.LiveSetting="Polite" />
+                        <TextBlock Text="{Binding CleanStallAnnouncement}" Height="0" Opacity="0"
+                                   AutomationProperties.LiveSetting="Assertive" />
                         <TextBlock Text="{Binding CleanPartsText}" Foreground="{StaticResource FaintBrush}"
                                    FontSize="12.5" HorizontalAlignment="Center" Margin="0,8,0,0" />
                         <TextBlock Text="{Binding CleanStatsText}" Foreground="{StaticResource MutedBrush}"
@@ -718,35 +768,37 @@
                     <TextBlock Text="{Binding ConfirmTitle}" FontSize="20" FontWeight="Bold" />
                     <TextBlock Text="{Binding ConfirmBody}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
                                Margin="0,10,0,0" LineHeight="21" />
-                    <Border Margin="0,16,0,22" Padding="14,8" CornerRadius="12" Background="{StaticResource SurfaceBrush}"
-                            BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
-                            Visibility="{Binding HasConfirmLines, Converter={StaticResource VisIf}}">
-                        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <ItemsControl ItemsSource="{Binding ConfirmLines}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="0,6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding Title}" FontSize="13.5" VerticalAlignment="Center"
-                                                       TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
-                                            <TextBlock Grid.Column="1" Text="{Binding SizeText}" FontSize="13.5" FontWeight="SemiBold"
-                                                       VerticalAlignment="Center" Margin="0,0,10,0" />
-                                            <Border Grid.Column="2" CornerRadius="9" Padding="8,3" Background="{Binding DestinationBg}"
-                                                    VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding DestinationText}" FontSize="11" FontWeight="SemiBold"
-                                                           Foreground="{Binding DestinationFg}" />
-                                            </Border>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                    </Border>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <StackPanel Margin="0,16,0,0" Visibility="{Binding HasConfirmCheckFirstLines, Converter={StaticResource VisIf}}">
+                        <TextBlock Text="{x:Static loc:S.ConfirmCheckFirstHeading}" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource PurgeStatusCheckTextBrush}" />
+                        <TextBlock Text="{x:Static loc:S.ConfirmCheckFirstExplainer}" Foreground="{StaticResource MutedBrush}"
+                                   FontSize="12.5" TextWrapping="Wrap" Margin="0,4,0,8" LineHeight="18" />
+                        <Border Padding="14,8" CornerRadius="12" Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource LineBrush}" BorderThickness="1">
+                            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding ConfirmCheckFirstLines}" ItemTemplate="{StaticResource ConfirmLineTemplate}" />
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Margin="0,16,0,0" Visibility="{Binding HasConfirmSafeLines, Converter={StaticResource VisIf}}">
+                        <TextBlock Text="{x:Static loc:S.ConfirmSafeHeading}" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource PurgeStatusSafeTextBrush}" />
+                        <TextBlock Text="{x:Static loc:S.ConfirmSafeExplainer}" Foreground="{StaticResource MutedBrush}"
+                                   FontSize="12.5" TextWrapping="Wrap" Margin="0,4,0,8" LineHeight="18" />
+                        <Border Padding="14,8" CornerRadius="12" Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource LineBrush}" BorderThickness="1">
+                            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding ConfirmSafeLines}" ItemTemplate="{StaticResource ConfirmLineTemplate}" />
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0"
+                                Visibility="{Binding ConfirmRequiresAcknowledgement, Converter={StaticResource VisIf}}">
+                        <CheckBox Style="{StaticResource PurgeWindowsCheck}" IsChecked="{Binding ConfirmAcknowledged}" VerticalAlignment="Top" />
+                        <TextBlock Text="{x:Static loc:S.ConfirmCheckFirstAcknowledge}" FontSize="13" TextWrapping="Wrap"
+                                   Margin="10,1,0,0" MaxWidth="372" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
                         <Button Style="{StaticResource SecondaryButton}" Content="{x:Static loc:S.Cancel}" Command="{Binding ConfirmNoCommand}" Margin="0,0,10,0" />
                         <Button Style="{StaticResource PrimaryButton}" Content="{Binding ConfirmYesText}" Command="{Binding ConfirmYesCommand}" Padding="20,12" />
                     </StackPanel>

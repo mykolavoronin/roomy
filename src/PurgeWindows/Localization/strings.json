@@ -1714,6 +1714,114 @@
     {
       "key": "FailRetryAdmin",
       "en": "Retry as administrator"
+    },
+    {
+      "key": "TimeElapsedEstimating",
+      "en": "Elapsed {0} · Estimating time left…"
+    },
+    {
+      "key": "TimeElapsedRemaining",
+      "en": "Elapsed {0} · About {1} left"
+    },
+    {
+      "key": "TimeElapsedLongRemaining",
+      "en": "Elapsed {0} · More than 15 minutes left"
+    },
+    {
+      "key": "TimeElapsedAlmostDone",
+      "en": "Elapsed {0} · Almost done"
+    },
+    {
+      "key": "TimeStopping",
+      "en": "Stopping… · Elapsed {0}"
+    },
+    {
+      "key": "StallSilent",
+      "en": "No update for {0} seconds."
+    },
+    {
+      "key": "StallDead",
+      "en": "Still no response after {0}."
+    },
+    {
+      "key": "StallSlowClean",
+      "en": "Still working on {0} — taking a while."
+    },
+    {
+      "key": "StallSlowCleanNoItem",
+      "en": "Still working on this part — taking a while."
+    },
+    {
+      "key": "StallStuckClean",
+      "en": "It may be stuck on {0}. You can stop safely — finished parts stay cleaned."
+    },
+    {
+      "key": "StallStuckCleanNoItem",
+      "en": "It may be stuck on this part. You can stop safely — finished parts stay cleaned."
+    },
+    {
+      "key": "StallDeadClean",
+      "en": "Still no response after {0}. Stopping is safe — finished parts stay cleaned."
+    },
+    {
+      "key": "StillStopping",
+      "en": "Still stopping…"
+    },
+    {
+      "key": "ScanStatusLine",
+      "en": "Step {0} of {1} · {2} elapsed"
+    },
+    {
+      "key": "StallSlowScan",
+      "en": "Still checking {0} — taking a while."
+    },
+    {
+      "key": "StallStuckScan",
+      "en": "The scan may be stuck on {0}."
+    },
+    {
+      "key": "SpaceProgressLine",
+      "en": "{0} files · {1} · {2} elapsed"
+    },
+    {
+      "key": "StallSlowMeasure",
+      "en": "Still measuring — taking a while."
+    },
+    {
+      "key": "StallStuckMeasure",
+      "en": "Measuring may be stuck."
+    },
+    {
+      "key": "ConfirmCheckFirstHeading",
+      "en": "Check First"
+    },
+    {
+      "key": "ConfirmSafeHeading",
+      "en": "Safe to delete"
+    },
+    {
+      "key": "ConfirmCheckFirstExplainer",
+      "en": "These may hold something you'd miss. If you're not sure about one, cancel and untick it. Most go to the Recycle Bin; anything cleared by an app's own cleanup tool is deleted for good."
+    },
+    {
+      "key": "ConfirmSafeExplainer",
+      "en": "The app rebuilds these itself. They go to the Recycle Bin, and you can restore them if you change your mind."
+    },
+    {
+      "key": "ConfirmCheckFirstAcknowledge",
+      "en": "I've checked the items above and I'm happy for them to be cleaned."
+    },
+    {
+      "key": "ConfirmTieredBody",
+      "en": "Check First items are listed first, then safe items. Everything goes to the Recycle Bin, so you can restore it if you change your mind — except anything an app's own cleanup tool clears."
+    },
+    {
+      "key": "StopScan",
+      "en": "Stop scan"
+    },
+    {
+      "key": "CleanFigureOfTotal",
+      "en": "of {0}"
     }
   ]
 }

@@ -1120,4 +1120,85 @@
   <data name="FailRetryAdmin" xml:space="preserve">
     <value>Retry as administrator</value>
   </data>
+  <data name="TimeElapsedEstimating" xml:space="preserve">
+    <value>Elapsed {0} · Estimating time left…</value>
+  </data>
+  <data name="TimeElapsedRemaining" xml:space="preserve">
+    <value>Elapsed {0} · About {1} left</value>
+  </data>
+  <data name="TimeElapsedLongRemaining" xml:space="preserve">
+    <value>Elapsed {0} · More than 15 minutes left</value>
+  </data>
+  <data name="TimeElapsedAlmostDone" xml:space="preserve">
+    <value>Elapsed {0} · Almost done</value>
+  </data>
+  <data name="TimeStopping" xml:space="preserve">
+    <value>Stopping… · Elapsed {0}</value>
+  </data>
+  <data name="StallSilent" xml:space="preserve">
+    <value>No update for {0} seconds.</value>
+  </data>
+  <data name="StallDead" xml:space="preserve">
+    <value>Still no response after {0}.</value>
+  </data>
+  <data name="StallSlowClean" xml:space="preserve">
+    <value>Still working on {0} — taking a while.</value>
+  </data>
+  <data name="StallSlowCleanNoItem" xml:space="preserve">
+    <value>Still working on this part — taking a while.</value>
+  </data>
+  <data name="StallStuckClean" xml:space="preserve">
+    <value>It may be stuck on {0}. You can stop safely — finished parts stay cleaned.</value>
+  </data>
+  <data name="StallStuckCleanNoItem" xml:space="preserve">
+    <value>It may be stuck on this part. You can stop safely — finished parts stay cleaned.</value>
+  </data>
+  <data name="StallDeadClean" xml:space="preserve">
+    <value>Still no response after {0}. Stopping is safe — finished parts stay cleaned.</value>
+  </data>
+  <data name="StillStopping" xml:space="preserve">
+    <value>Still stopping…</value>
+  </data>
+  <data name="ScanStatusLine" xml:space="preserve">
+    <value>Step {0} of {1} · {2} elapsed</value>
+  </data>
+  <data name="StallSlowScan" xml:space="preserve">
+    <value>Still checking {0} — taking a while.</value>
+  </data>
+  <data name="StallStuckScan" xml:space="preserve">
+    <value>The scan may be stuck on {0}.</value>
+  </data>
+  <data name="SpaceProgressLine" xml:space="preserve">
+    <value>{0} files · {1} · {2} elapsed</value>
+  </data>
+  <data name="StallSlowMeasure" xml:space="preserve">
+    <value>Still measuring — taking a while.</value>
+  </data>
+  <data name="StallStuckMeasure" xml:space="preserve">
+    <value>Measuring may be stuck.</value>
+  </data>
+  <data name="ConfirmCheckFirstHeading" xml:space="preserve">
+    <value>Check First</value>
+  </data>
+  <data name="ConfirmSafeHeading" xml:space="preserve">
+    <value>Safe to delete</value>
+  </data>
+  <data name="ConfirmCheckFirstExplainer" xml:space="preserve">
+    <value>These may hold something you'd miss. If you're not sure about one, cancel and untick it. Most go to the Recycle Bin; anything cleared by an app's own cleanup tool is deleted for good.</value>
+  </data>
+  <data name="ConfirmSafeExplainer" xml:space="preserve">
+    <value>The app rebuilds these itself. They go to the Recycle Bin, and you can restore them if you change your mind.</value>
+  </data>
+  <data name="ConfirmCheckFirstAcknowledge" xml:space="preserve">
+    <value>I've checked the items above and I'm happy for them to be cleaned.</value>
+  </data>
+  <data name="ConfirmTieredBody" xml:space="preserve">
+    <value>Check First items are listed first, then safe items. Everything goes to the Recycle Bin, so you can restore it if you change your mind — except anything an app's own cleanup tool clears.</value>
+  </data>
+  <data name="StopScan" xml:space="preserve">
+    <value>Stop scan</value>
+  </data>
+  <data name="CleanFigureOfTotal" xml:space="preserve">
+    <value>of {0}</value>
+  </data>
 </root>

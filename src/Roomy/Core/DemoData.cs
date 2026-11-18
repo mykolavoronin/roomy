@@ -16,65 +16,65 @@ public static class DemoData
         (@"D:\", "Games", Gb(931.5), Gb(212.4)),
     ];
 
-    static CleanupItem I(string name, long size, string detail, bool file = false) => new()
+    static CleanupItem I(string name, long size, string detail, bool file = false, int files = 0) => new()
     {
-        Name = name, Paths = [$@"C:\Users\you\demo\{name}"], Size = size, Detail = detail, IsFile = file,
+        Name = name, Paths = [$@"C:\Users\you\demo\{name}"], Size = size, Detail = detail, IsFile = file, FileCount = files,
     };
 
     public static CleanupCategory? Category(string id)
     {
         var c = Catalog.Create(id);
-        void A(string name, long size, string detail, bool file = false) => c.Items.Add(I(name, size, detail, file));
+        void A(string name, long size, string detail, bool file = false, int files = 0) => c.Items.Add(I(name, size, detail, file, files));
         switch (id)
         {
             case "recycle":
-                A("Recycle Bin", Gb(3.21), "214 items");
+                A("Recycle Bin", Gb(3.21), "214 items", files: 214);
                 break;
             case "temp":
-                A("Your temp folder", Gb(4.62), "18,402 files");
+                A("Your temp folder", Gb(4.62), "18,402 files", files: 18402);
                 break;
             case "browser":
-                A("Google Chrome", Gb(2.08), "9,311 files");
-                A("Microsoft Edge", Mb(712), "3,904 files");
-                A("Firefox", Mb(388), "2,117 files");
+                A("Google Chrome", Gb(2.08), "9,311 files", files: 9311);
+                A("Microsoft Edge", Mb(712), "3,904 files", files: 3904);
+                A("Firefox", Mb(388), "2,117 files", files: 2117);
                 break;
             case "apps":
-                A("npm cache", Gb(2.26), "41,870 files");
-                A("Discord", Gb(1.38), "6,220 files");
-                A("VS Code", Mb(864), "2,951 files");
-                A("Steam's web browser", Mb(412), "1,480 files");
-                A("Slack", Mb(296), "1,022 files");
+                A("npm cache", Gb(2.26), "41,870 files", files: 41870);
+                A("Discord", Gb(1.38), "6,220 files", files: 6220);
+                A("VS Code", Mb(864), "2,951 files", files: 2951);
+                A("Steam's web browser", Mb(412), "1,480 files", files: 1480);
+                A("Slack", Mb(296), "1,022 files", files: 1022);
                 break;
             case "shaders":
-                A("Steam games", Gb(3.62), "12,094 files");
-                A("NVIDIA", Gb(1.91), "4,388 files");
-                A("DirectX", Mb(742), "1,203 files");
+                A("Steam games", Gb(3.62), "12,094 files", files: 12094);
+                A("NVIDIA", Gb(1.91), "4,388 files", files: 4388);
+                A("DirectX", Mb(742), "1,203 files", files: 1203);
                 break;
             case "crash":
-                A("App crash dumps", Gb(1.12), "37 files");
-                A("Windows error reports", Mb(286), "412 files");
+                A("App crash dumps", Gb(1.12), "37 files", files: 37);
+                A("Windows error reports", Mb(286), "412 files", files: 412);
                 break;
             case "windows":
-                A("Downloaded updates", Gb(6.31), "1,904 files");
-                A("Delivery Optimization", Gb(1.82), "96 files");
-                A("Windows temp folder", Mb(524), "3,311 files");
+                A("Downloaded updates", Gb(6.31), "1,904 files", files: 1904);
+                A("Delivery Optimization", Gb(1.82), "96 files", files: 96);
+                A("Windows temp folder", Mb(524), "3,311 files", files: 3311);
                 break;
             case "installers":
-                A("Blender-4.3-windows-x64.msi", Mb(341), "Downloaded 4 months ago", true);
-                A("OBS-Studio-31.0-Windows-Installer.exe", Mb(152), "Downloaded 3 months ago", true);
-                A("NVIDIA_App_v11.0.exe", Mb(148), "Downloaded 5 weeks ago", true);
-                A("UnityHubSetup.exe", Mb(127), "Downloaded 7 months ago", true);
-                A("DiscordSetup.exe", Mb(112), "Downloaded a year ago", true);
-                A("VSCodeUserSetup-x64.exe", Mb(98), "Downloaded 2 months ago", true);
-                A("python-3.13.1-amd64.exe", Mb(27), "Downloaded 6 months ago", true);
-                A("node-v22.11.0-x64.msi", Mb(29), "Downloaded 4 months ago", true);
-                A("SteamSetup.exe", Mb(2.3), "Downloaded a year ago", true);
+                A("Blender-4.3-windows-x64.msi", Mb(341), "Downloaded 4 months ago", true, 1);
+                A("OBS-Studio-31.0-Windows-Installer.exe", Mb(152), "Downloaded 3 months ago", true, 1);
+                A("NVIDIA_App_v11.0.exe", Mb(148), "Downloaded 5 weeks ago", true, 1);
+                A("UnityHubSetup.exe", Mb(127), "Downloaded 7 months ago", true, 1);
+                A("DiscordSetup.exe", Mb(112), "Downloaded a year ago", true, 1);
+                A("VSCodeUserSetup-x64.exe", Mb(98), "Downloaded 2 months ago", true, 1);
+                A("python-3.13.1-amd64.exe", Mb(27), "Downloaded 6 months ago", true, 1);
+                A("node-v22.11.0-x64.msi", Mb(29), "Downloaded 4 months ago", true, 1);
+                A("SteamSetup.exe", Mb(2.3), "Downloaded a year ago", true, 1);
                 break;
             case "downloads":
-                A("Windows11_InsiderPreview.iso", Gb(6.12), "Untouched for 8 months", true);
-                A("Recording 2026-03-14.mkv", Gb(3.24), "Untouched for 7 months", true);
-                A("final-edit-v3-export.mp4", Gb(2.41), "Untouched for 2 months", true);
-                A("dataset-full.zip", Gb(1.83), "Untouched for 5 months", true);
+                A("Windows11_InsiderPreview.iso", Gb(6.12), "Untouched for 8 months", true, 1);
+                A("Recording 2026-03-14.mkv", Gb(3.24), "Untouched for 7 months", true, 1);
+                A("final-edit-v3-export.mp4", Gb(2.41), "Untouched for 2 months", true, 1);
+                A("dataset-full.zip", Gb(1.83), "Untouched for 5 months", true, 1);
                 break;
             case "games":
                 c.Items.Add(new CleanupItem { Name = "Iron Frontier", Paths = [@"D:\Steam\steamapps\common\Iron Frontier"], Size = Gb(118.6), AppId = "0", Detail = "Last played a year ago" });
@@ -84,6 +84,25 @@ public static class DemoData
                 break;
             case "winold":
                 A("Windows.old", Gb(21.4), "");
+                break;
+            case "thumbnails":
+                A("Thumbnail and icon cache", Mb(184), "1,204 files", files: 1204);
+                break;
+            case "avd":
+                A("Pixel_9_API_35", Gb(2.41), "312 files", files: 312);
+                A("Medium_Phone_API_34", Gb(1.08), "188 files", files: 188);
+                break;
+            case "devcaches":
+                A("Maven local repository", Gb(3.82), "18,204 files", files: 18204);
+                A("Gradle caches", Gb(2.24), "9,431 files", files: 9431);
+                A("Cargo registry cache", Gb(1.41), "3,872 files", files: 3872);
+                A("Go build & module cache", Mb(986), "5,118 files", files: 5118);
+                break;
+            case "virtual":
+                A("VirtualBox VMs", Gb(48.2), "Compact or remove through VirtualBox");
+                A("VMware VMs", Gb(32.8), "Compact or remove through VMware");
+                A("WSL2: Ubuntu-24.04", Gb(18.6), "Compact with wsl --manage --compact");
+                A("Docker Desktop disk", Gb(12.4), "Prune, then compact through Docker");
                 break;
         }
         return c;

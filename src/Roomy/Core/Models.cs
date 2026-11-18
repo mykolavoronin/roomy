@@ -3,6 +3,28 @@ namespace Roomy.Core;
 
 public enum Safety { Safe, Review }
 
+/// <summary>Where cleaned files go. The default sends "your call" items to the Recycle Bin.</summary>
+public enum RemovalMode
+{
+    /// <summary>"Your call" items go to the Recycle Bin; safe items are deleted directly.</summary>
+    ReviewToBin,
+    /// <summary>Everything that can be recycled goes to the Recycle Bin.</summary>
+    EverythingToBin,
+    /// <summary>Everything is deleted directly, including "your call" items.</summary>
+    EverythingPermanent,
+}
+
+public static class RemovalPolicy
+{
+    /// <summary>True when this category's files go to the Recycle Bin under <paramref name="mode"/>.</summary>
+    public static bool GoesToBin(RemovalMode mode, CleanupCategory c) => mode switch
+    {
+        RemovalMode.EverythingToBin => c.Action == CleanAction.Delete,
+        RemovalMode.EverythingPermanent => false,
+        _ => c.Action == CleanAction.Delete && c.Safety == Safety.Review,
+    };
+}
+
 public enum CleanAction
 {
     /// <summary>Delete files (for folders: delete the contents, keep the folder).</summary>
@@ -12,6 +34,8 @@ public enum CleanAction
     SteamUninstall,
     /// <summary>Only Windows can remove it safely, so we open Settings.</summary>
     OpenSettings,
+    /// <summary>Sizes only. Roomy never touches these files; the owning tool must do it.</summary>
+    ReportOnly,
 }
 
 public sealed class CleanupItem
@@ -135,6 +159,29 @@ public static class Catalog
             Id = id, Title = S.CatWinOld, Glyph = G.History, Safety = Safety.Review,
             Description = S.CatWinOldDesc,
             Action = CleanAction.OpenSettings, ShowItems = false,
+        },
+        "thumbnails" => new CleanupCategory
+        {
+            Id = id, Title = S.CatThumbnails, Glyph = G.Document,
+            Description = S.CatThumbnailsDesc,
+            SelectedByDefault = true,
+        },
+        "avd" => new CleanupCategory
+        {
+            Id = id, Title = S.CatAvd, Glyph = G.Apps,
+            Description = S.CatAvdDesc,
+            SelectedByDefault = false,
+        },
+        "devcaches" => new CleanupCategory
+        {
+            Id = id, Title = S.CatDevCaches, Glyph = G.Package, Safety = Safety.Review,
+            Description = S.CatDevCachesDesc,
+        },
+        "virtual" => new CleanupCategory
+        {
+            Id = id, Title = S.CatVirtual, Glyph = G.Folder, Safety = Safety.Review,
+            Description = S.CatVirtualDesc,
+            Action = CleanAction.ReportOnly,
         },
         _ => throw new ArgumentOutOfRangeException(nameof(id), id, S.UnknownCategory),
     };

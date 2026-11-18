@@ -28,6 +28,7 @@ public sealed class MainVM : ObservableObject
         ConfirmNoCommand = new RelayCommand(() => CloseConfirm(false));
         SpaceMap = new SpaceMapVM(this);
         RefreshDrives();
+        RefreshRemoval();
     }
 
     public bool IsDemo { get; }
@@ -48,6 +49,25 @@ public sealed class MainVM : ObservableObject
 
     AppState _state = AppState.Home;
     public AppState State { get => _state; private set => Set(ref _state, value); }
+
+    // ---------- removal: where cleaned files go ----------
+
+    public RemovalMode RemovalSetting { get; private set; }
+
+    void SetRemoval(RemovalMode mode)
+    {
+        RemovalSetting = mode;
+        foreach (var c in Categories) c.RefreshDestination();
+        Raise(nameof(SelectedBinTotal));
+        Raise(nameof(SelectedDeleteTotal));
+        Raise(nameof(HasSelectionSplit));
+        Raise(nameof(SelectionSplitText));
+    }
+
+    /// <summary>Re-reads the removal choice from settings (the demo always uses the default).</summary>
+    public void RefreshRemoval() => SetRemoval(IsDemo
+        ? RemovalMode.ReviewToBin
+        : new PreferencesStore(PreferencesStore.DefaultPath).Load().Removal);
 
     // ---------- drives ----------
 
@@ -102,6 +122,22 @@ public sealed class MainVM : ObservableObject
     long _scanFound;
     public long ScanFound { get => _scanFound; private set => Set(ref _scanFound, value); }
 
+    int _scanItems;
+    public int ScanItemsFound { get => _scanItems; private set => Set(ref _scanItems, value); }
+
+    int _scanDone;
+    public int ScanStepsDone { get => _scanDone; private set => Set(ref _scanDone, value); }
+
+    public double ScanFraction => Scanner.Steps.Count == 0 ? 0 : (double)ScanStepsDone / Scanner.Steps.Count;
+    public string ScanTotalsText => Loc.Format("ScanTotalsLine",
+        ScanItemsFound.ToString("N0"), ScanStepsDone, Scanner.Steps.Count);
+
+    void RaiseScanTotals()
+    {
+        Raise(nameof(ScanFraction));
+        Raise(nameof(ScanTotalsText));
+    }
+
     async Task ScanAsync()
     {
         if (_busy) return;
@@ -111,6 +147,9 @@ public sealed class MainVM : ObservableObject
             ScanSteps.Clear();
             foreach (var s in Scanner.Steps) ScanSteps.Add(new ScanStepVM(s.Title));
             ScanFound = 0;
+            ScanItemsFound = 0;
+            ScanStepsDone = 0;
+            RaiseScanTotals();
             IsCleanupTab = true;
             State = AppState.Scanning;
 
@@ -130,11 +169,14 @@ public sealed class MainVM : ObservableObject
                 if (sw.ElapsedMilliseconds < min) await Task.Delay(min - (int)sw.ElapsedMilliseconds);
 
                 row.Finish(cat);
+                ScanStepsDone = i + 1;
                 if (cat != null)
                 {
                     results.Add(cat);
+                    ScanItemsFound += cat.Items.Count;
                     if (cat.Safety == Safety.Safe && !cat.Blocked) ScanFound += cat.Size;
                 }
+                RaiseScanTotals();
             }
 
             BuildCategories(results);
@@ -176,6 +218,7 @@ public sealed class MainVM : ObservableObject
         Raise(nameof(ReviewSummary));
         Raise(nameof(ShowAdminBanner));
         Raise(nameof(NothingFound));
+        RefreshRemoval();
         Recalc();
     }
 
@@ -190,10 +233,26 @@ public sealed class MainVM : ObservableObject
     public long SelectedTotal => Categories.Sum(c => c.SelectedSize);
     public string CleanButtonText => SelectedTotal > 0 ? Loc.Format("CleanUpAmount", Format.Bytes(SelectedTotal)) : S.PickSomething;
 
+    /// <summary>How much of the selection goes to the Recycle Bin vs being deleted for good.</summary>
+    public long SelectedBinTotal => Categories
+        .Where(c => c.CanSelect && c.Model.Action == CleanAction.Delete && RemovalPolicy.GoesToBin(RemovalSetting, c.Model))
+        .Sum(c => c.SelectedSize);
+    public long SelectedDeleteTotal => Categories
+        .Where(c => c.CanSelect && c.Model.Action == CleanAction.Delete && !RemovalPolicy.GoesToBin(RemovalSetting, c.Model))
+        .Sum(c => c.SelectedSize);
+    public bool HasSelectionSplit => SelectedBinTotal > 0;
+    public string SelectionSplitText => SelectedDeleteTotal > 0
+        ? Loc.Format("SelectionSplitBoth", Format.Bytes(SelectedBinTotal), Format.Bytes(SelectedDeleteTotal))
+        : Loc.Format("SelectionSplitBin", Format.Bytes(SelectedBinTotal));
+
     internal void Recalc()
     {
         Raise(nameof(SelectedTotal));
         Raise(nameof(CleanButtonText));
+        Raise(nameof(SelectedBinTotal));
+        Raise(nameof(SelectedDeleteTotal));
+        Raise(nameof(HasSelectionSplit));
+        Raise(nameof(SelectionSplitText));
         CleanCommand.RaiseCanExecuteChanged();
     }
 
@@ -230,8 +289,40 @@ public sealed class MainVM : ObservableObject
     string _cleanStep = "";
     public string CleanStep { get => _cleanStep; private set => Set(ref _cleanStep, value); }
 
+    string _cleanItem = "";
+    public string CleanCurrentItem { get => _cleanItem; private set => Set(ref _cleanItem, value); }
+
+    int _cleanFiles;
+    public int CleanFilesSoFar { get => _cleanFiles; private set => Set(ref _cleanFiles, value); }
+
+    long _cleanFreed, _cleanRecycled;
+    public long CleanFreedSoFar { get => _cleanFreed; private set => Set(ref _cleanFreed, value); }
+    public long CleanRecycledSoFar { get => _cleanRecycled; private set => Set(ref _cleanRecycled, value); }
+
+    public string CleanStatsText => Loc.Format("CleanStats",
+        CleanFilesSoFar.ToString("N0"), Loc.Files(CleanFilesSoFar), Format.Bytes(CleanFreedSoFar));
+    public bool HasCleanRecycled => CleanRecycledSoFar > 0;
+    public string CleanRecycledText => Loc.Format("RecycledSoFar", Format.Bytes(CleanRecycledSoFar));
+
+    void RaiseCleanStats()
+    {
+        Raise(nameof(CleanStatsText));
+        Raise(nameof(HasCleanRecycled));
+        Raise(nameof(CleanRecycledText));
+    }
+
     long _freed;
     public long Freed { get => _freed; private set => Set(ref _freed, value); }
+
+    int _filesRemoved;
+    public int FilesRemoved { get => _filesRemoved; private set => Set(ref _filesRemoved, value); }
+    public string FilesRemovedText => Loc.Format("FilesRemovedTotal",
+        FilesRemoved.ToString("N0"), Loc.Files(FilesRemoved));
+
+    public ObservableCollection<DoneCategoryVM> DoneCategories { get; } = [];
+    public bool HasDoneBreakdown => DoneCategories.Count > 0;
+    public bool HasDoneSplit => Freed > 0 && Recycled > 0;
+    public string DoneSplitText => Loc.Format("DoneSplit", Format.Bytes(Freed), Format.Bytes(Recycled));
 
     long _skipped;
     public long Skipped { get => _skipped; private set => Set(ref _skipped, value); }
@@ -265,15 +356,25 @@ public sealed class MainVM : ObservableObject
         if (jobs.Count == 0) return;
 
         // Read fresh so the choice also applies after "Restart as admin".
-        var recycle = !IsDemo && new PreferencesStore(PreferencesStore.DefaultPath).Load().RecycleDownloads;
-        var review = jobs.Where(j => j.Category.Safety == Safety.Review).SelectMany(j => j.Items).ToList();
-        if (review.Count > 0)
+        var mode = IsDemo ? RemovalMode.ReviewToBin : new PreferencesStore(PreferencesStore.DefaultPath).Load().Removal;
+        SetRemoval(mode);
+
+        // Confirm whenever "your call" files are involved, or when everything goes to the
+        // Recycle Bin (the space is only freed once the bin is emptied). The dialog lists
+        // every category with where it goes, so there are no surprises.
+        var lines = jobs.Select(j => ConfirmLineFor(j, mode)).ToList();
+        bool anyReview = jobs.Any(j => j.Category.Safety == Safety.Review);
+        if (anyReview || mode == RemovalMode.EverythingToBin)
         {
-            var picked = Loc.Format("PickedFromDownloads", review.Count, Loc.Files(review.Count), Format.Bytes(review.Sum(i => i.Size)));
-            var ok = recycle
-                ? await ConfirmAsync(S.MoveToBinTitle, picked + S.MoveToBinWarning, S.MoveToBin)
-                : await ConfirmAsync(S.DeleteTheseForGood, picked + S.DeleteWarning, S.DeletePermanently);
-            if (!ok) return;
+            bool allBin = lines.All(l => l.Destination == ConfirmDestination.Bin);
+            bool allDeleted = lines.All(l => l.Destination == ConfirmDestination.Deleted);
+            var (title, body, yes) = (allBin, allDeleted) switch
+            {
+                (true, _) => (S.MoveToBinTitle, S.MoveToBinWarning, S.MoveToBin),
+                (_, true) => (S.DeleteTheseForGood, S.DeleteWarning, S.DeletePermanently),
+                _ => (S.ConfirmCleanTitle, S.ConfirmMixedBody, S.CleanUp),
+            };
+            if (!await ConfirmAsync(title, body, yes, lines)) return;
         }
 
         _busy = true;
@@ -285,32 +386,51 @@ public sealed class MainVM : ObservableObject
             BeforeText = drive is null ? "" : Loc.Format("FreeBytes", Format.Bytes(drive.Free));
             CleanProgress = 0;
             CleanStep = S.GettingStarted;
+            CleanCurrentItem = "";
+            CleanFilesSoFar = 0;
+            CleanFreedSoFar = 0;
+            CleanRecycledSoFar = 0;
+            RaiseCleanStats();
             State = AppState.Cleaning;
+
+            var progress = new Progress<CleanProgress>(p =>
+            {
+                CleanProgress = p.Fraction;
+                CleanStep = p.Step;
+                CleanCurrentItem = p.CurrentItem;
+                CleanFilesSoFar = p.FilesSoFar;
+                CleanFreedSoFar = p.FreedSoFar;
+                CleanRecycledSoFar = p.RecycledSoFar;
+                RaiseCleanStats();
+            });
 
             CleanResult r;
             if (IsDemo)
             {
-                r = await DemoClean(jobs);
+                r = await DemoClean(jobs, mode, progress);
                 _demoFreed += r.Freed;
             }
             else
             {
-                var progress = new Progress<(double Fraction, string Step)>(p =>
-                {
-                    CleanProgress = p.Fraction;
-                    CleanStep = p.Step;
-                });
-                r = await Task.Run(() => Cleaner.Run(jobs, progress, recycle));
+                r = await Task.Run(() => Cleaner.Run(jobs, progress, mode));
                 await Task.Delay(500);
             }
 
             Freed = r.Freed;
+            FilesRemoved = r.Files;
             Skipped = r.Skipped;
             Recycled = r.Recycled;
+            DoneCategories.Clear();
+            foreach (var c in (r.Categories ?? []).Where(c => c.Freed + c.Recycled > 0).OrderByDescending(c => c.Freed + c.Recycled))
+                DoneCategories.Add(new DoneCategoryVM(c));
             RefreshDrives();
             AfterFraction = drive?.UsedFraction ?? 0;
             AfterText = drive is null ? "" : Loc.Format("FreeBytes", Format.Bytes(drive.Free));
             DoneSubtitle = drive is null ? "" : Loc.Format("DriveNowFree", drive.Letter, Format.Bytes(drive.Free));
+            Raise(nameof(FilesRemovedText));
+            Raise(nameof(HasDoneBreakdown));
+            Raise(nameof(HasDoneSplit));
+            Raise(nameof(DoneSplitText));
             Raise(nameof(HasSkipped));
             Raise(nameof(SkippedText));
             Raise(nameof(HasRecycled));
@@ -328,19 +448,45 @@ public sealed class MainVM : ObservableObject
         }
     }
 
-    async Task<CleanResult> DemoClean(List<CleanJob> jobs)
+    static ConfirmLine ConfirmLineFor(CleanJob job, RemovalMode mode)
     {
-        long total = jobs.Sum(j => j.Items.Sum(i => i.Size));
-        long done = 0;
+        var dest = job.Category.Action == CleanAction.EmptyRecycleBin ? ConfirmDestination.BinEmptied
+            : RemovalPolicy.GoesToBin(mode, job.Category) ? ConfirmDestination.Bin : ConfirmDestination.Deleted;
+        return new ConfirmLine(job.Category.Title, Format.Bytes(job.Items.Sum(i => i.Size)), dest);
+    }
+
+    async Task<CleanResult> DemoClean(List<CleanJob> jobs, RemovalMode mode, IProgress<CleanProgress> progress)
+    {
+        long total = Math.Max(1, jobs.Sum(j => j.Items.Sum(i => i.Size)));
+        long done = 0, freed = 0, recycled = 0;
+        int files = 0;
+        var perCategory = new List<CategoryCleanResult>();
         foreach (var j in jobs)
         {
-            CleanStep = Loc.Format("CleaningCategory", j.Category.Title.ToLowerInvariant());
-            done += j.Items.Sum(i => i.Size);
-            CleanProgress = (double)done / total;
-            await Task.Delay(320);
+            var step = Loc.Format("CleaningCategory", j.Category.Title.ToLowerInvariant());
+            progress.Report(new CleanProgress((double)done / total, step, "", freed, recycled, files));
+            bool binJob = j.Category.Action == CleanAction.EmptyRecycleBin;
+            bool recycle = RemovalPolicy.GoesToBin(mode, j.Category);
+            long jobFreed = 0, jobRecycled = 0;
+            int jobFiles = 0;
+            foreach (var item in j.Items)
+            {
+                if (binJob || !recycle) { jobFreed += item.Size; freed += item.Size; }
+                else { jobRecycled += item.Size; recycled += item.Size; }
+                files += item.FileCount;
+                jobFiles += item.FileCount;
+                done += item.Size;
+                progress.Report(new CleanProgress((double)done / total, step, item.Name, freed, recycled, files));
+                await Task.Delay(110);
+            }
+            var dest = binJob ? CleanDestination.BinEmptied
+                : recycle ? CleanDestination.Recycled : CleanDestination.Deleted;
+            perCategory.Add(new CategoryCleanResult(j.Category.Id, j.Category.Title, jobFreed, jobRecycled, 0, jobFiles, dest));
+            await Task.Delay(120);
         }
         await Task.Delay(300);
-        return new CleanResult(total, 0, 48_211);
+        progress.Report(new CleanProgress(1, S.AllDone, "", freed, recycled, files));
+        return new CleanResult(freed, 0, files, recycled, perCategory);
     }
 
     void RestartAsAdmin()
@@ -362,11 +508,17 @@ public sealed class MainVM : ObservableObject
     public string ConfirmBody { get => _confirmBody; private set => Set(ref _confirmBody, value); }
     public string ConfirmYesText { get => _confirmYes; private set => Set(ref _confirmYes, value); }
 
-    Task<bool> ConfirmAsync(string title, string body, string yes)
+    public ObservableCollection<ConfirmLine> ConfirmLines { get; } = [];
+    public bool HasConfirmLines => ConfirmLines.Count > 0;
+
+    Task<bool> ConfirmAsync(string title, string body, string yes, IReadOnlyList<ConfirmLine> lines)
     {
         ConfirmTitle = title;
         ConfirmBody = body;
         ConfirmYesText = yes;
+        ConfirmLines.Clear();
+        foreach (var l in lines) ConfirmLines.Add(l);
+        Raise(nameof(HasConfirmLines));
         _confirm = new TaskCompletionSource<bool>();
         ConfirmVisible = true;
         return _confirm.Task;
@@ -403,4 +555,56 @@ public sealed class MainVM : ObservableObject
     {
         foreach (var c in Categories) c.IsExpanded = c.Model.Id == id;
     }
+}
+
+/// <summary>Where one category's files go, as shown in the pre-clean confirmation.</summary>
+public enum ConfirmDestination { Deleted, Bin, BinEmptied }
+
+public sealed record ConfirmLine(string Title, string SizeText, ConfirmDestination Destination)
+{
+    public string DestinationText => Destination switch
+    {
+        ConfirmDestination.Bin => S.CatRecycle,
+        ConfirmDestination.BinEmptied => S.BinEmptied,
+        _ => S.DeletedForGood,
+    };
+    public Brush DestinationBg => Res.Brush(Destination switch
+    {
+        ConfirmDestination.Bin => "WarnSoftBrush",
+        ConfirmDestination.BinEmptied => "MutedSoftBrush",
+        _ => "DangerSoftBrush",
+    });
+    public Brush DestinationFg => Res.Brush(Destination switch
+    {
+        ConfirmDestination.Bin => "WarnBrush",
+        ConfirmDestination.BinEmptied => "MutedBrush",
+        _ => "DangerBrush",
+    });
+}
+
+/// <summary>One row of the done screen's per-category breakdown.</summary>
+public sealed class DoneCategoryVM(CategoryCleanResult result)
+{
+    public string Title => result.Title;
+    public string AmountText => Format.Bytes(result.Freed + result.Recycled);
+    public bool HasFiles => result.Files > 0;
+    public string FilesText => $"{result.Files:N0} {Loc.Files(result.Files)}";
+    public string DestinationText => result.Destination switch
+    {
+        CleanDestination.Recycled => S.CatRecycle,
+        CleanDestination.BinEmptied => S.BinEmptied,
+        _ => S.DeletedForGood,
+    };
+    public Brush DestinationBg => Res.Brush(result.Destination switch
+    {
+        CleanDestination.Recycled => "WarnSoftBrush",
+        CleanDestination.BinEmptied => "MutedSoftBrush",
+        _ => "DangerSoftBrush",
+    });
+    public Brush DestinationFg => Res.Brush(result.Destination switch
+    {
+        CleanDestination.Recycled => "WarnBrush",
+        CleanDestination.BinEmptied => "MutedBrush",
+        _ => "DangerBrush",
+    });
 }

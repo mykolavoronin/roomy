@@ -39,15 +39,19 @@ Most cleaners stick to temp files and the Recycle Bin, and Windows' own tools mi
 | | Category | Default |
 |---|---|---|
 | ♻️ | Windows Update leftovers, Delivery Optimization, Windows temp (needs admin) | ✅ Safe |
-| 🧩 | App caches: Discord, Spotify, VS Code, Slack, Teams, Steam web, Epic Games Launcher, npm, pip, Yarn, NuGet | ✅ Safe |
+| 🧩 | App caches: Discord, Spotify, VS Code, Slack, Teams, Steam web, Epic Games Launcher, npm, pip, Yarn, NuGet, ChatGPT, Claude, Cursor, Battle.net, EA app, GOG Galaxy, Ubisoft Connect, OBS, Adobe media cache, Visual Studio, Chocolatey | ✅ Safe |
 | 🌐 | Browser caches: Chrome, Edge, Brave, Vivaldi, Firefox, Opera | ✅ Safe |
 | 🕒 | Temp files (older than a day), crash dumps, error reports, Recycle Bin | ✅ Safe |
+| 🖼️ | Thumbnail and icon cache | ✅ Safe |
 | 🎨 | GPU shader caches (NVIDIA, AMD, Intel, DirectX, Steam) | Safe, unticked |
+| 📱 | Android emulator snapshots and scratch cache (apps and data untouched) | Safe, unticked |
+| 🧑‍💻 | Developer caches: Maven, Gradle, Cargo, Go (tools re-download them) | Your call |
 | 📦 | Old installers & big untouched downloads | Your call |
 | 🎮 | Steam games you haven't played in 2+ months (uninstalls through Steam) | Your call |
-| 🪟 | `Windows.old` (opens Windows' own cleanup) | Your call |
+| 🖥️ | Virtual machines & emulator disks (sizes only — compact or remove through their own tools, Roomy never deletes them) | Your call |
+| 🪟 | `Windows.old` and upgrade staging folders (opens Windows' own cleanup) | Your call |
 
-Plus a **Space map** that lets you click down through any drive folder by folder and see the biggest files on your PC.
+Plus a **Space map** that lets you click down through any drive folder by folder and see the biggest files on your PC, and **Windows space settings** (hibernation on/off with the trade-offs explained, and a Delivery Optimization cache clear) in Settings.
 
 ## Background checks
 
@@ -74,7 +78,7 @@ Preferences, reminder cooldowns and snooze times stay in `%LOCALAPPDATA%\Roomy\s
 - **In-use files are skipped**, never forced.
 - **"Your call" items start unticked** and ask for confirmation before anything is removed.
 - **No network access at all.** No telemetry, no accounts, no updates phoning home. If Roomy ever crashes, it writes the error to `%LOCALAPPDATA%\Roomy\crash.log` on your PC so you can attach it to an issue. It's never sent anywhere.
-- **Your choice of permanent or Recycle Bin.** By default, cleaned files are deleted for good, and Roomy says so before you confirm. Turn on *Send files from Downloads to the Recycle Bin* in Settings to be able to restore old installers and downloads. If a file is too big for the bin, Windows asks before deleting it.
+- **Your choice of Recycle Bin or permanent.** Files you're unsure about — old installers, big downloads — go to the Recycle Bin by default, so you can restore them. Caches and other safe stuff is deleted directly, since apps rebuild it. In Settings you can send everything to the Recycle Bin, or delete everything permanently instead. Before cleaning, Roomy lists every category with where it goes. If a file is too big for the bin, Windows asks before deleting it.
 - **No admin needed.** Roomy runs as a normal user. Only the *Windows leftovers* category (Windows Update downloads, Delivery Optimization cache, the Windows temp folder, system crash dumps) needs admin, and Roomy only asks if you click *Restart as admin*. Without it, that category is skipped.
 - **Background checks never delete.** They only read free space and cache sizes, then show a reminder. Every cleanup is something you start.
 

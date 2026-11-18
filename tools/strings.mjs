@@ -28,8 +28,13 @@ ${entries.map((e) => `  <data name="${e.key}" xml:space="preserve">
 </root>
 `;
 
+// Entries without a translation are left out of that language's catalogue, so
+// the runtime falls back to the English text (see Loc.cs). Never invent a
+// translation here; translators fill the gaps in strings.json.
+const untranslated = strings.filter((e) => !e.ru).map((e) => e.key);
+
 fs.writeFileSync(path.join(locDir, 'Strings.resx'), resx(strings, 'en'));
-fs.writeFileSync(path.join(locDir, 'Strings.ru.resx'), resx(strings, 'ru'));
+fs.writeFileSync(path.join(locDir, 'Strings.ru.resx'), resx(strings.filter((e) => e.ru), 'ru'));
 
 const properties = strings
   .map((e) => `    /// <summary>${e.en.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\*\//g, '* /')}</summary>\n    public static string ${e.key} => Loc.Get("${e.key}");`)
@@ -49,3 +54,4 @@ ${properties}
 `);
 
 console.log(`strings.json: ${strings.length} strings; S.g.cs and both .resx files written`);
+if (untranslated.length > 0) console.log(`untranslated (ru falls back to en): ${untranslated.join(', ')}`);

@@ -8,27 +8,36 @@ public sealed class PreferencesTests : IDisposable
     string SettingsPath => Path.Combine(_folder, "settings.json");
 
     [Fact]
-    public void MissingSettingsStayOffWithoutCreatingFiles()
+    public void MissingSettingsUseTheRecycleBinDefaultWithoutCreatingFiles()
     {
         var p = new PreferencesStore(SettingsPath).Load();
         Assert.False(p.RunInBackground);
-        Assert.False(p.RecycleDownloads);
+        Assert.Equal(RemovalMode.ReviewToBin, p.Removal);
         Assert.False(File.Exists(SettingsPath));
     }
 
     [Fact]
-    public void RecycleChoiceSurvivesRestart()
+    public void RemovalChoiceSurvivesRestart()
     {
-        new PreferencesStore(SettingsPath).Save(new() { RecycleDownloads = true });
-        Assert.True(new PreferencesStore(SettingsPath).Load().RecycleDownloads);
+        new PreferencesStore(SettingsPath).Save(new() { Removal = RemovalMode.EverythingPermanent });
+        Assert.Equal(RemovalMode.EverythingPermanent, new PreferencesStore(SettingsPath).Load().Removal);
     }
 
     [Fact]
-    public void OlderSettingsFilesKeepDeletingPermanently()
+    public void OlderSettingsFilesUseTheRecycleBinDefault()
     {
         Directory.CreateDirectory(_folder);
-        File.WriteAllText(SettingsPath, "{\"RunInBackground\":true}");
-        Assert.False(new PreferencesStore(SettingsPath).Load().RecycleDownloads);
+        // Written by an older Roomy: the old RecycleDownloads switch is ignored.
+        File.WriteAllText(SettingsPath, "{\"RunInBackground\":true,\"RecycleDownloads\":true}");
+        Assert.Equal(RemovalMode.ReviewToBin, new PreferencesStore(SettingsPath).Load().Removal);
+    }
+
+    [Fact]
+    public void UnknownRemovalValuesFallBackToTheDefault()
+    {
+        Directory.CreateDirectory(_folder);
+        File.WriteAllText(SettingsPath, "{\"Removal\":99}");
+        Assert.Equal(RemovalMode.ReviewToBin, new PreferencesStore(SettingsPath).Load().Removal);
     }
 
     [Fact]

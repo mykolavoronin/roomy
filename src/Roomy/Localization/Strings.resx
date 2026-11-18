@@ -685,4 +685,232 @@
   <data name="RecycledMessage" xml:space="preserve">
     <value>{0} went to the Recycle Bin. Empty it when you're sure, to free that space too.</value>
   </data>
+  <data name="ScanTotalsLine" xml:space="preserve">
+    <value>{0} items found · {1} of {2} checks done</value>
+  </data>
+  <data name="CleanStats" xml:space="preserve">
+    <value>{0} {1} removed · {2} freed</value>
+  </data>
+  <data name="RecycledSoFar" xml:space="preserve">
+    <value>{0} moved to the Recycle Bin</value>
+  </data>
+  <data name="FilesRemovedTotal" xml:space="preserve">
+    <value>{0} {1} removed</value>
+  </data>
+  <data name="DoneBreakdownTitle" xml:space="preserve">
+    <value>What was cleaned</value>
+  </data>
+  <data name="DeletedForGood" xml:space="preserve">
+    <value>Deleted for good</value>
+  </data>
+  <data name="BinEmptied" xml:space="preserve">
+    <value>Bin emptied</value>
+  </data>
+  <data name="DoneSplit" xml:space="preserve">
+    <value>{0} deleted for good · {1} moved to the Recycle Bin</value>
+  </data>
+  <data name="ConfirmCleanTitle" xml:space="preserve">
+    <value>Ready to clean up?</value>
+  </data>
+  <data name="ConfirmMixedBody" xml:space="preserve">
+    <value>The list shows where everything goes. Things in the Recycle Bin can be restored; deleted things are gone for good, and their space is freed right away.</value>
+  </data>
+  <data name="CleanUp" xml:space="preserve">
+    <value>Clean up</value>
+  </data>
+  <data name="GoesToBin" xml:space="preserve">
+    <value>Goes to the Recycle Bin</value>
+  </data>
+  <data name="RemovalSectionTitle" xml:space="preserve">
+    <value>How Roomy removes things</value>
+  </data>
+  <data name="RemovalSectionHint" xml:space="preserve">
+    <value>Choose where cleaned files go. You can change this any time.</value>
+  </data>
+  <data name="RemovalDefault" xml:space="preserve">
+    <value>Your call items go to the Recycle Bin</value>
+  </data>
+  <data name="RemovalDefaultHint" xml:space="preserve">
+    <value>Files you're unsure about can be restored from the Recycle Bin. Caches and other safe stuff is deleted directly, since apps rebuild it.</value>
+  </data>
+  <data name="RemovalBin" xml:space="preserve">
+    <value>Everything goes to the Recycle Bin</value>
+  </data>
+  <data name="RemovalBinHint" xml:space="preserve">
+    <value>Nothing is deleted directly. Space is only freed when you empty the Recycle Bin.</value>
+  </data>
+  <data name="RemovalPermanent" xml:space="preserve">
+    <value>Everything is deleted permanently</value>
+  </data>
+  <data name="RemovalPermanentHint" xml:space="preserve">
+    <value>Space is freed right away. Nothing can be restored, so check your picks first.</value>
+  </data>
+  <data name="SelectionSplitBoth" xml:space="preserve">
+    <value>{0} to the Recycle Bin · {1} deleted for good</value>
+  </data>
+  <data name="SelectionSplitBin" xml:space="preserve">
+    <value>{0} to the Recycle Bin — empty it to free that space</value>
+  </data>
+  <data name="CatThumbnails" xml:space="preserve">
+    <value>Thumbnail &amp; icon cache</value>
+  </data>
+  <data name="CatThumbnailsDesc" xml:space="preserve">
+    <value>Preview pictures Explorer built for your photos, videos and documents, plus cached app icons. Explorer rebuilds them as you browse, so folders may show generic icons for a bit.</value>
+  </data>
+  <data name="CatAvd" xml:space="preserve">
+    <value>Android emulator cache</value>
+  </data>
+  <data name="CatAvdDesc" xml:space="preserve">
+    <value>Quick Boot snapshots and the temporary cache of Android emulators from Android Studio. Your installed apps and emulator data are untouched — only snapshots and scratch cache go. Close the emulator first.</value>
+  </data>
+  <data name="CatDevCaches" xml:space="preserve">
+    <value>Developer caches</value>
+  </data>
+  <data name="CatDevCachesDesc" xml:space="preserve">
+    <value>Downloaded packages and build outputs from Maven, Gradle, Cargo and Go. Your tools re-download and rebuild them, so the next build is slower and needs the network. Your projects and settings are untouched.</value>
+  </data>
+  <data name="CatVirtual" xml:space="preserve">
+    <value>Virtual machines &amp; emulators</value>
+  </data>
+  <data name="CatVirtualDesc" xml:space="preserve">
+    <value>Sizes only. Virtual disks never shrink on their own, but Roomy never deletes them — a wrong delete destroys the whole machine. Compact or remove each one through its own tool; use the folder button to open it.</value>
+  </data>
+  <data name="ItemChatGpt" xml:space="preserve">
+    <value>ChatGPT</value>
+  </data>
+  <data name="ItemClaude" xml:space="preserve">
+    <value>Claude</value>
+  </data>
+  <data name="ItemCursor" xml:space="preserve">
+    <value>Cursor</value>
+  </data>
+  <data name="ItemBattleNet" xml:space="preserve">
+    <value>Battle.net</value>
+  </data>
+  <data name="ItemEaApp" xml:space="preserve">
+    <value>EA app</value>
+  </data>
+  <data name="ItemGog" xml:space="preserve">
+    <value>GOG Galaxy</value>
+  </data>
+  <data name="ItemUbisoft" xml:space="preserve">
+    <value>Ubisoft Connect</value>
+  </data>
+  <data name="ItemObs" xml:space="preserve">
+    <value>OBS Studio</value>
+  </data>
+  <data name="ItemAdobeCache" xml:space="preserve">
+    <value>Adobe media cache</value>
+  </data>
+  <data name="ItemVisualStudio" xml:space="preserve">
+    <value>Visual Studio</value>
+  </data>
+  <data name="ItemChocolatey" xml:space="preserve">
+    <value>Chocolatey download cache</value>
+  </data>
+  <data name="ItemMaven" xml:space="preserve">
+    <value>Maven local repository</value>
+  </data>
+  <data name="ItemGradle" xml:space="preserve">
+    <value>Gradle caches</value>
+  </data>
+  <data name="ItemCargo" xml:space="preserve">
+    <value>Cargo registry cache</value>
+  </data>
+  <data name="ItemGoCache" xml:space="preserve">
+    <value>Go build &amp; module cache</value>
+  </data>
+  <data name="ItemThumbnails" xml:space="preserve">
+    <value>Thumbnail and icon cache</value>
+  </data>
+  <data name="ItemVirtualBox" xml:space="preserve">
+    <value>VirtualBox VMs</value>
+  </data>
+  <data name="ItemVMware" xml:space="preserve">
+    <value>VMware VMs</value>
+  </data>
+  <data name="ItemHyperV" xml:space="preserve">
+    <value>Hyper-V virtual disks</value>
+  </data>
+  <data name="ItemDocker" xml:space="preserve">
+    <value>Docker Desktop disk</value>
+  </data>
+  <data name="ItemBlueStacks" xml:space="preserve">
+    <value>BlueStacks instances</value>
+  </data>
+  <data name="ItemLdPlayer" xml:space="preserve">
+    <value>LDPlayer instances</value>
+  </data>
+  <data name="ItemNox" xml:space="preserve">
+    <value>NoxPlayer instances</value>
+  </data>
+  <data name="ItemMemu" xml:space="preserve">
+    <value>MEmu instances</value>
+  </data>
+  <data name="VirtualNote" xml:space="preserve">
+    <value>Roomy only reports these sizes. Shrink or remove a virtual disk through its own tool — never by deleting its files, or the machine breaks.</value>
+  </data>
+  <data name="VirtualItemDetail" xml:space="preserve">
+    <value>Open the folder, then compact or remove it in its own tool.</value>
+  </data>
+  <data name="WinOldStagingNote" xml:space="preserve">
+    <value>This includes Windows upgrade staging folders. Only remove them through Windows, and only when no upgrade is in progress.</value>
+  </data>
+  <data name="WindowsSettingsTitle" xml:space="preserve">
+    <value>Windows space settings</value>
+  </data>
+  <data name="WindowsSettingsHint" xml:space="preserve">
+    <value>Things Windows itself controls. Every change here goes through Windows' own tools, and everything is reversible.</value>
+  </data>
+  <data name="HibernateTitle" xml:space="preserve">
+    <value>Allow hibernation</value>
+  </data>
+  <data name="HibernateHint" xml:space="preserve">
+    <value>Hibernation saves everything in memory to hiberfil.sys so your PC can fully power off and resume later. Turning it off deletes that file and frees its space, but also turns off Fast Startup, which uses the same file. You can turn it back on any time. Changing this needs admin approval.</value>
+  </data>
+  <data name="HibernateStateOn" xml:space="preserve">
+    <value>Hibernation is on.</value>
+  </data>
+  <data name="HibernateStateOff" xml:space="preserve">
+    <value>Hibernation is off.</value>
+  </data>
+  <data name="HibernateFileSize" xml:space="preserve">
+    <value>hiberfil.sys is using {0}.</value>
+  </data>
+  <data name="HibernateUnknown" xml:space="preserve">
+    <value>Couldn't read the hibernation setting on this PC.</value>
+  </data>
+  <data name="HibernateTurnedOff" xml:space="preserve">
+    <value>Hibernation is off now — {0} freed.</value>
+  </data>
+  <data name="HibernateTurnedOn" xml:space="preserve">
+    <value>Hibernation is on again.</value>
+  </data>
+  <data name="HibernateCancelled" xml:space="preserve">
+    <value>Cancelled — nothing was changed.</value>
+  </data>
+  <data name="HibernateFailed" xml:space="preserve">
+    <value>Couldn't change the hibernation setting: </value>
+  </data>
+  <data name="DeliveryOptTitle" xml:space="preserve">
+    <value>Delivery Optimization cache</value>
+  </data>
+  <data name="DeliveryOptHint" xml:space="preserve">
+    <value>Files Windows downloaded from other PCs to speed up updates. Safe to clear — Windows re-downloads what it needs. This is the same cache the Windows Update leftovers check finds.</value>
+  </data>
+  <data name="DeliveryOptNeedsAdmin" xml:space="preserve">
+    <value>Needs admin — restart Roomy as admin to clear this cache from here.</value>
+  </data>
+  <data name="ClearCacheNow" xml:space="preserve">
+    <value>Clear the cache now</value>
+  </data>
+  <data name="DeliveryOptCleared" xml:space="preserve">
+    <value>Cleared {0} from the Delivery Optimization cache.</value>
+  </data>
+  <data name="DeliveryOptEmpty" xml:space="preserve">
+    <value>The Delivery Optimization cache is already empty.</value>
+  </data>
+  <data name="WindowsSettingsDemoNote" xml:space="preserve">
+    <value>Windows settings can't be changed in demo mode.</value>
+  </data>
 </root>

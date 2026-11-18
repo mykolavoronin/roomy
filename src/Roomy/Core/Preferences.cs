@@ -10,8 +10,8 @@ public sealed record Preferences
     public bool WeeklyChecks { get; init; }
     public int LowSpaceGB { get; init; } = 10;
     public int CheckEveryMinutes { get; init; } = 30;
-    /// <summary>Send cleaned files from Downloads to the Recycle Bin instead of deleting them.</summary>
-    public bool RecycleDownloads { get; init; }
+    /// <summary>Where cleaned files go. The default sends "your call" items to the Recycle Bin.</summary>
+    public RemovalMode Removal { get; init; }
     public DateTimeOffset? SnoozedUntil { get; init; }
     public DateTimeOffset? LastNotification { get; init; }
     public DateTimeOffset? LastWeeklyCheck { get; init; }
@@ -20,6 +20,8 @@ public sealed record Preferences
     {
         LowSpaceGB = Math.Clamp(LowSpaceGB, 1, 500),
         CheckEveryMinutes = CheckEveryMinutes == 60 ? 60 : 30,
+        Removal = Removal is RemovalMode.ReviewToBin or RemovalMode.EverythingToBin or RemovalMode.EverythingPermanent
+            ? Removal : RemovalMode.ReviewToBin,
     };
 }
 

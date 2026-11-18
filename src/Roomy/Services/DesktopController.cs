@@ -56,6 +56,7 @@ public sealed class DesktopController : IDisposable
     {
         Save(preferences);
         Refresh();
+        _vm.RefreshRemoval();
     }
 
     void Refresh()

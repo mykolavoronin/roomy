@@ -55,6 +55,12 @@ public sealed class CategoryVM : ObservableObject
     public Brush BadgeFg => Res.Brush(Model.Blocked ? "MutedBrush" : IsSafe ? "AccentBrush" : "WarnBrush");
     public Brush IconBrush => Res.Brush(Model.Blocked ? "MutedBrush" : IsSafe ? "AccentBrush" : "WarnBrush");
 
+    /// <summary>Shown only when this category's files go to the Recycle Bin instead of being deleted.</summary>
+    public bool ShowDestination => RemovalPolicy.GoesToBin(_owner.RemovalSetting, Model);
+    public string DestinationText => S.GoesToBin;
+
+    internal void RefreshDestination() => Raise(nameof(ShowDestination));
+
     bool _expanded;
     public bool IsExpanded
     {

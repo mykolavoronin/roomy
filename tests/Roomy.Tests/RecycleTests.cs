@@ -66,22 +66,70 @@ public sealed class RecycleTests : IDisposable
         var caches = new CleanupCategory { Id = "apps", Title = "Caches", Description = "", Glyph = "" };
         caches.Items.Add(new CleanupItem { Name = "cache", Paths = [cacheDir], Size = 2048 });
 
-        var r = Cleaner.Run([new(downloads, downloads.Items), new(caches, caches.Items)], null, recycleReview: true);
+        var r = Cleaner.Run([new(downloads, downloads.Items), new(caches, caches.Items)], null);
 
         Assert.Equal(4096, r.Recycled);
         Assert.Equal(2048, r.Freed);
         Assert.False(File.Exists(download));
         Assert.Empty(Directory.GetFiles(cacheDir));
+        Assert.Equal(2, r.Categories!.Count);
+        var dl = r.Categories.Single(c => c.CategoryId == "downloads");
+        Assert.Equal(CleanDestination.Recycled, dl.Destination);
+        Assert.Equal(4096, dl.Recycled);
+        Assert.Equal(CleanDestination.Deleted, r.Categories.Single(c => c.CategoryId == "apps").Destination);
     }
 
     [Fact]
-    public void WithoutTheOptionDownloadsAreDeleted()
+    public void EverythingToBinRecyclesCacheContents()
+    {
+        if (OnCi) return;
+        var cacheDir = Path.Combine(_folder, "cache");
+        var sub = Path.Combine(cacheDir, "nested");
+        Directory.CreateDirectory(sub);
+        File.WriteAllBytes(Path.Combine(cacheDir, "blob"), new byte[2048]);
+        File.WriteAllBytes(Path.Combine(sub, "deep"), new byte[1024]);
+
+        var caches = new CleanupCategory { Id = "apps", Title = "Caches", Description = "", Glyph = "" };
+        caches.Items.Add(new CleanupItem { Name = "cache", Paths = [cacheDir], Size = 3072 });
+
+        var r = Cleaner.Run([new(caches, caches.Items)], null, RemovalMode.EverythingToBin);
+
+        Assert.Equal(3072, r.Recycled);
+        Assert.Equal(0, r.Freed);
+        Assert.True(Directory.Exists(cacheDir), "the folder itself stays");
+        Assert.Empty(Directory.GetFiles(cacheDir, "*", SearchOption.AllDirectories));
+        Assert.Equal(CleanDestination.Recycled, r.Categories!.Single().Destination);
+    }
+
+    [Fact]
+    public void CleaningReportsLiveProgress()
+    {
+        var cacheDir = Path.Combine(_folder, "cache");
+        Directory.CreateDirectory(cacheDir);
+        File.WriteAllBytes(Path.Combine(cacheDir, "blob"), new byte[2048]);
+        var caches = new CleanupCategory { Id = "apps", Title = "Caches", Description = "", Glyph = "" };
+        caches.Items.Add(new CleanupItem { Name = "cache", Paths = [cacheDir], Size = 2048 });
+
+        var seen = new List<CleanProgress>();
+        var r = Cleaner.Run([new(caches, caches.Items)], new Progress<CleanProgress>(seen.Add), RemovalMode.EverythingPermanent);
+
+        Assert.Equal(2048, r.Freed);
+        Assert.NotEmpty(seen);
+        var last = seen[^1];
+        Assert.Equal(1, last.Fraction);
+        Assert.Equal(2048, last.FreedSoFar);
+        Assert.Equal(1, last.FilesSoFar);
+        Assert.Contains(seen, p => p.CurrentItem == "cache");
+    }
+
+    [Fact]
+    public void PermanentModeDeletesDownloads()
     {
         var download = MakeFile("old.msi", TimeSpan.FromDays(60));
         var downloads = new CleanupCategory { Id = "downloads", Title = "Downloads", Description = "", Glyph = "", Safety = Safety.Review };
         downloads.Items.Add(new CleanupItem { Name = "msi", Paths = [download], Size = 4096, IsFile = true });
 
-        var r = Cleaner.Run([new(downloads, downloads.Items)], null);
+        var r = Cleaner.Run([new(downloads, downloads.Items)], null, RemovalMode.EverythingPermanent);
 
         Assert.Equal(0, r.Recycled);
         Assert.Equal(4096, r.Freed);

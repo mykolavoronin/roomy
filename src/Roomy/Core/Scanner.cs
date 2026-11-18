@@ -46,12 +46,16 @@ public static class Scanner
         new("temp", S.CatTemp, Temp),
         new("browser", S.CatBrowser, Browsers),
         new("apps", S.CatApps, Apps),
+        new("devcaches", S.CatDevCaches, DevCaches),
         new("shaders", S.StepShaders, Shaders),
+        new("avd", S.CatAvd, AvdCaches),
         new("crash", S.CatCrash, Crashes),
+        new("thumbnails", S.CatThumbnails, Thumbnails),
         new("windows", S.StepWindows, WindowsLeftovers),
         new("installers", S.CatInstallers, Installers),
         new("downloads", S.StepDownloads, BigDownloads),
         new("games", S.StepGames, Games),
+        new("virtual", S.CatVirtual, VirtualMachines),
         new("winold", S.StepWinOld, WindowsOld),
     ];
 
@@ -77,6 +81,17 @@ public static class Scanner
         };
     }
 
+    /// <summary>Like <see cref="Item"/>, but for sizes Roomy only reports: the detail tells the user where to act.</summary>
+    static CleanupItem? Report(string name, string detail, CancellationToken ct, IEnumerable<string> paths)
+    {
+        var existing = paths.Where(FileOps.Exists).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        if (existing.Count == 0) return null;
+        long size = 0;
+        foreach (var p in existing) size += FileOps.Measure(p, null, ct).Bytes;
+        if (size <= 0) return null;
+        return new CleanupItem { Name = name, Paths = existing, Size = size, Detail = detail };
+    }
+
     static void Add(CleanupCategory c, CleanupItem? i)
     {
         if (i != null) c.Items.Add(i);
@@ -92,6 +107,18 @@ public static class Scanner
     {
         try { return Directory.Exists(dir) ? Directory.GetDirectories(dir) : []; }
         catch { return []; }
+    }
+
+    static IEnumerable<string> FilesIn(string dir, params string[] patterns)
+    {
+        if (!Directory.Exists(dir)) yield break;
+        foreach (var pattern in patterns)
+        {
+            IEnumerable<string> found;
+            try { found = Directory.EnumerateFiles(dir, pattern, SearchOption.TopDirectoryOnly).ToList(); }
+            catch { continue; }
+            foreach (var f in found) yield return f;
+        }
     }
 
     static List<string> Running(params (string Proc, string Name)[] apps)
@@ -213,10 +240,67 @@ public static class Scanner
         Add(cat, Item(S.ItemNpm, null, c.Token, [Env.L("npm-cache", "_cacache")]));
         Add(cat, Item(S.ItemPip, null, c.Token, [Env.L("pip", "Cache")]));
         Add(cat, Item(S.ItemYarn, null, c.Token, [Env.L("Yarn", "Cache")]));
-        Add(cat, Item(S.ItemNuget, null, c.Token, [Env.L("NuGet", "v3-cache")]));
+        Add(cat, Item(S.ItemNuget, null, c.Token, [Env.L("NuGet", "v3-cache"), Env.L("NuGet", "plugins-cache")]));
+        // AI assistants are Electron apps: only their Chromium cache leaves are touched.
+        // Config, chats and history live elsewhere and are never included. ChatGPT's
+        // folder depends on the installer, so both classic locations are probed.
+        Add(cat, Item(S.ItemChatGpt, null, c.Token,
+            new[] { Env.R("ChatGPT"), Env.R("OpenAI", "ChatGPT") }.SelectMany(Bits)));
+        Add(cat, Item(S.ItemClaude, null, c.Token,
+            new[]
+            {
+                Env.R("Claude"),
+                Env.L("Packages", "Claude_pzs8sxrjxfjjc", "LocalCache", "Roaming", "Claude"),
+                Env.L("AnthropicClaude"),
+            }.SelectMany(r => Bits(r).Concat(new[]
+            {
+                Path.Combine(r, "GrShaderCache"), Path.Combine(r, "DawnGraphiteCache"),
+                Path.Combine(r, "DawnWebGPUCache"), Path.Combine(r, "Crashpad"),
+            }))));
+        // Cursor: cache leaves only. User\ (settings, history) and the chat database
+        // (state.vscdb) are never touched.
+        Add(cat, Item(S.ItemCursor, null, c.Token,
+            Bits(Env.R("Cursor")).Append(Env.R("Cursor", "CachedData"))));
+        // Game launcher web caches: contents only, launcher closed. Games, saves and
+        // sign-ins live elsewhere. Xbox has no hand-delete folder, so it stays out.
+        Add(cat, Item(S.ItemBattleNet, null, c.Token,
+            [Env.PD("Battle.net"), Env.PD("Blizzard Entertainment", "Battle.net", "Cache"),
+             Env.L("Blizzard Entertainment", "Battle.net", "Cache"), Env.L("Battle.net")]));
+        Add(cat, Item(S.ItemEaApp, null, c.Token,
+            [Env.L("Electronic Arts", "EA Desktop", "Cache"), Env.L("Electronic Arts", "EA Desktop", "cache")]));
+        Add(cat, Item(S.ItemGog, null, c.Token, [Env.L("GOG.com", "Galaxy", "webcache")]));
+        Add(cat, Item(S.ItemUbisoft, null, c.Token, [Env.L("Ubisoft Game Launcher", "cache")]));
+        Add(cat, Item(S.ItemObs, null, c.Token,
+            [Env.R("obs-studio", "logs"), Env.R("obs-studio", "crashes"),
+             Env.R("obs-studio", "plugin_config", "obs-browser", "Cache")]));
+        // Adobe's shared media cache: conformed audio, waveforms and indexes. Projects,
+        // footage and presets live elsewhere. Adobe rebuilds the cache on next open.
+        Add(cat, Item(S.ItemAdobeCache, null, c.Token,
+            [Env.R("Adobe", "Common", "Media Cache Files"), Env.R("Adobe", "Common", "Media Cache"),
+             Env.R("Adobe", "Common", "Peak Files")]));
+        Add(cat, Item(S.ItemVisualStudio, null, c.Token,
+            Subdirs(Env.L("Microsoft", "VisualStudio")).Select(p => Path.Combine(p, "ComponentModelCache"))));
+        Add(cat, Item(S.ItemChocolatey, null, c.Token,
+            [Env.PD("ChocolateyHttpCache"), Path.Combine(Env.UserProfile, ".chocolatey", "http-cache")]));
         if (cat.Items.Count > 0)
             cat.Note = RunningNote(Running(("Discord", S.ItemDiscord), ("slack", S.ItemSlack), ("Code", S.ItemVsCode), ("Teams", "Teams"),
                 ("ms-teams", "Teams"), ("Spotify", "Spotify"), ("EpicGamesLauncher", "Epic Games Launcher")));
+        return Sorted(cat);
+    }
+
+    static CleanupCategory DevCaches(ScanContext c)
+    {
+        var cat = Catalog.Create("devcaches");
+        // Package and build caches only — never stores other projects link into
+        // (pnpm, uv) and never settings, credentials or installed tools.
+        Add(cat, Item(S.ItemMaven, null, c.Token, [Path.Combine(Env.UserProfile, ".m2", "repository")]));
+        Add(cat, Item(S.ItemGradle, null, c.Token,
+            [Path.Combine(Env.UserProfile, ".gradle", "caches"), Path.Combine(Env.UserProfile, ".gradle", "wrapper", "dists")]));
+        Add(cat, Item(S.ItemCargo, null, c.Token,
+            [Path.Combine(Env.UserProfile, ".cargo", "registry", "cache"), Path.Combine(Env.UserProfile, ".cargo", "registry", "src"),
+             Path.Combine(Env.UserProfile, ".cargo", "git")]));
+        Add(cat, Item(S.ItemGoCache, null, c.Token,
+            [Env.L("go-build"), Path.Combine(Env.UserProfile, "go", "pkg", "mod")]));
         return Sorted(cat);
     }
 
@@ -234,12 +318,40 @@ public static class Scanner
         return Sorted(cat);
     }
 
+    static CleanupCategory AvdCaches(ScanContext c)
+    {
+        var cat = Catalog.Create("avd");
+        var avdRoot = Path.Combine(Env.UserProfile, ".android", "avd");
+        foreach (var dir in Subdirs(avdRoot))
+        {
+            var name = Path.GetFileName(dir);
+            if (!name.EndsWith(".avd", StringComparison.OrdinalIgnoreCase)) continue;
+            // Only Quick Boot snapshots and the scratch cache image. User data, SD card
+            // images, config and the debug keystore are never included.
+            Add(cat, Item(name[..^4], null, c.Token,
+                [Path.Combine(dir, "snapshots"), Path.Combine(dir, "cache.img")]));
+        }
+        if (cat.Items.Count > 0)
+            cat.Note = RunningNote(Running(("qemu-system-x86_64", "Android Emulator"), ("emulator", "Android Emulator")));
+        return Sorted(cat);
+    }
+
     static CleanupCategory Crashes(ScanContext c)
     {
         var cat = Catalog.Create("crash");
         Add(cat, Item(S.ItemAppCrashDumps, null, c.Token, [Env.L("CrashDumps")]));
         Add(cat, Item(S.ItemWindowsErrorReports, null, c.Token, [Env.L("Microsoft", "Windows", "WER")]));
         return Sorted(cat);
+    }
+
+    static CleanupCategory Thumbnails(ScanContext c)
+    {
+        var cat = Catalog.Create("thumbnails");
+        // Only the thumbnail and icon database files themselves, never the folder.
+        Add(cat, Item(S.ItemThumbnails, null, c.Token,
+            FilesIn(Env.L("Microsoft", "Windows", "Explorer"), "thumbcache_*.db", "iconcache_*.db")
+                .Append(Env.L("IconCache.db"))));
+        return cat;
     }
 
     static CleanupCategory WindowsLeftovers(ScanContext c)
@@ -256,7 +368,7 @@ public static class Scanner
             [Env.W("ServiceProfiles", "NetworkService", "AppData", "Local", "Microsoft", "Windows", "DeliveryOptimization", "Cache")]));
         Add(cat, Item(S.ItemWindowsTemp, OneDay, c.Token, [Env.W("Temp")]));
         Add(cat, Item(S.ItemSystemCrashDumps, null, c.Token,
-            [Env.W("Minidump"), Env.W("MEMORY.DMP"), Env.PD("Microsoft", "Windows", "WER", "ReportArchive"), Env.PD("Microsoft", "Windows", "WER", "ReportQueue")]));
+            [Env.W("Minidump"), Env.W("MEMORY.DMP"), Env.W("LiveKernelReports"), Env.PD("Microsoft", "Windows", "WER", "ReportArchive"), Env.PD("Microsoft", "Windows", "WER", "ReportQueue")]));
         return Sorted(cat);
     }
 
@@ -326,13 +438,66 @@ public static class Scanner
         return Sorted(cat);
     }
 
+    /// <summary>
+    /// Sizes only: virtual machine and emulator disks. These are never deleted by Roomy —
+    /// a hand-deleted disk image destroys the machine. The owning tool must compact or
+    /// remove them, so each item just reports its size and opens its folder.
+    /// </summary>
+    static CleanupCategory VirtualMachines(ScanContext c)
+    {
+        var cat = Catalog.Create("virtual");
+        cat.Note = S.VirtualNote;
+        var detail = S.VirtualItemDetail;
+        Add(cat, Report(S.ItemVirtualBox, detail, c.Token, [Path.Combine(Env.UserProfile, "VirtualBox VMs")]));
+        Add(cat, Report(S.ItemVMware, detail, c.Token, [Path.Combine(Env.UserProfile, "Documents", "Virtual Machines")]));
+        Add(cat, Report(S.ItemHyperV, detail, c.Token,
+            [Path.Combine(Env.SystemRoot, "Users", "Public", "Documents", "Hyper-V", "Virtual Hard Disks")]));
+        // WSL2 distro disks, one item per distro.
+        foreach (var dir in Subdirs(Env.L("Packages")))
+        {
+            if (!Path.GetFileName(dir).StartsWith("CanonicalGroupLimited", StringComparison.OrdinalIgnoreCase)) continue;
+            var vhdx = Path.Combine(dir, "LocalState", "ext4.vhdx");
+            if (File.Exists(vhdx)) Add(cat, Report(Path.GetFileName(dir), detail, c.Token, [vhdx]));
+        }
+        foreach (var dir in Subdirs(Env.L("wsl")))
+        {
+            var vhdx = Path.Combine(dir, "ext4.vhdx");
+            if (File.Exists(vhdx)) Add(cat, Report(Path.GetFileName(dir), detail, c.Token, [vhdx]));
+        }
+        Add(cat, Report(S.ItemDocker, detail, c.Token,
+            [Env.L("Docker", "wsl", "disk", "docker_data.vhdx"), Env.L("Docker", "wsl", "data", "ext4.vhdx")]));
+        Add(cat, Report(S.ItemBlueStacks, detail, c.Token, [Env.PD("BlueStacks_nxt", "Engine")]));
+        var drive = Env.SystemRoot;
+        Add(cat, Report(S.ItemLdPlayer, detail, c.Token,
+            [Path.Combine(drive, "LDPlayer", "LDPlayer9", "vms"), Path.Combine(drive, "LDPlayer", "LDPlayer14", "vms"),
+             Path.Combine(drive, "leidian", "LDPlayer9", "vms"), Path.Combine(drive, "leidian", "LDPlayer14", "vms")]));
+        Add(cat, Report(S.ItemNox, detail, c.Token,
+            [Path.Combine(Env.ProgramFiles, "Nox", "bin", "BignoxVMS"),
+             Path.Combine(Env.ProgramFilesX86, "Nox", "bin", "BignoxVMS"),
+             Env.R("Nox", "bin", "BignoxVMS")]));
+        Add(cat, Report(S.ItemMemu, detail, c.Token,
+            [Path.Combine(Env.ProgramFiles, "Microvirt", "MEmu", "image"),
+             Path.Combine(Env.ProgramFilesX86, "Microvirt", "MEmu", "image")]));
+        return Sorted(cat);
+    }
+
     static CleanupCategory? WindowsOld(ScanContext c)
     {
-        var p = Path.Combine(Env.SystemRoot, "Windows.old");
-        if (!Directory.Exists(p)) return null;
-        var (b, _) = FileOps.Measure(p, null, c.Token);
         var cat = Catalog.Create("winold");
-        cat.Items.Add(new CleanupItem { Name = "Windows.old", Paths = [p], Size = b });
+        var root = Env.SystemRoot;
+        var folders = new[] { "Windows.old", "$WINDOWS.~BT", "$WINDOWS.~WS", "ESD", "Windows10Upgrade", "$GetCurrent", "$SysReset" };
+        bool staging = false;
+        foreach (var folder in folders)
+        {
+            var p = Path.Combine(root, folder);
+            if (!Directory.Exists(p)) continue;
+            var (b, _) = FileOps.Measure(p, null, c.Token);
+            if (b <= 0) continue;
+            if (folder != "Windows.old") staging = true;
+            cat.Items.Add(new CleanupItem { Name = folder, Paths = [p], Size = b });
+        }
+        if (cat.Items.Count == 0) return null;
+        if (staging) cat.Note = S.WinOldStagingNote;
         return cat;
     }
 }

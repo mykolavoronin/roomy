@@ -1134,6 +1134,310 @@
       "key": "RecycledMessage",
       "en": "{0} went to the Recycle Bin. Empty it when you're sure, to free that space too.",
       "ru": "{0} перемещено в корзину. Очистите её, когда будете уверены, чтобы освободить и это место."
+    },
+    {
+      "key": "ScanTotalsLine",
+      "en": "{0} items found · {1} of {2} checks done"
+    },
+    {
+      "key": "CleanStats",
+      "en": "{0} {1} removed · {2} freed"
+    },
+    {
+      "key": "RecycledSoFar",
+      "en": "{0} moved to the Recycle Bin"
+    },
+    {
+      "key": "FilesRemovedTotal",
+      "en": "{0} {1} removed"
+    },
+    {
+      "key": "DoneBreakdownTitle",
+      "en": "What was cleaned"
+    },
+    {
+      "key": "DeletedForGood",
+      "en": "Deleted for good"
+    },
+    {
+      "key": "BinEmptied",
+      "en": "Bin emptied"
+    },
+    {
+      "key": "DoneSplit",
+      "en": "{0} deleted for good · {1} moved to the Recycle Bin"
+    },
+    {
+      "key": "ConfirmCleanTitle",
+      "en": "Ready to clean up?"
+    },
+    {
+      "key": "ConfirmMixedBody",
+      "en": "The list shows where everything goes. Things in the Recycle Bin can be restored; deleted things are gone for good, and their space is freed right away."
+    },
+    {
+      "key": "CleanUp",
+      "en": "Clean up"
+    },
+    {
+      "key": "GoesToBin",
+      "en": "Goes to the Recycle Bin"
+    },
+    {
+      "key": "RemovalSectionTitle",
+      "en": "How Roomy removes things"
+    },
+    {
+      "key": "RemovalSectionHint",
+      "en": "Choose where cleaned files go. You can change this any time."
+    },
+    {
+      "key": "RemovalDefault",
+      "en": "Your call items go to the Recycle Bin"
+    },
+    {
+      "key": "RemovalDefaultHint",
+      "en": "Files you're unsure about can be restored from the Recycle Bin. Caches and other safe stuff is deleted directly, since apps rebuild it."
+    },
+    {
+      "key": "RemovalBin",
+      "en": "Everything goes to the Recycle Bin"
+    },
+    {
+      "key": "RemovalBinHint",
+      "en": "Nothing is deleted directly. Space is only freed when you empty the Recycle Bin."
+    },
+    {
+      "key": "RemovalPermanent",
+      "en": "Everything is deleted permanently"
+    },
+    {
+      "key": "RemovalPermanentHint",
+      "en": "Space is freed right away. Nothing can be restored, so check your picks first."
+    },
+    {
+      "key": "SelectionSplitBoth",
+      "en": "{0} to the Recycle Bin · {1} deleted for good"
+    },
+    {
+      "key": "SelectionSplitBin",
+      "en": "{0} to the Recycle Bin — empty it to free that space"
+    },
+    {
+      "key": "CatThumbnails",
+      "en": "Thumbnail & icon cache"
+    },
+    {
+      "key": "CatThumbnailsDesc",
+      "en": "Preview pictures Explorer built for your photos, videos and documents, plus cached app icons. Explorer rebuilds them as you browse, so folders may show generic icons for a bit."
+    },
+    {
+      "key": "CatAvd",
+      "en": "Android emulator cache"
+    },
+    {
+      "key": "CatAvdDesc",
+      "en": "Quick Boot snapshots and the temporary cache of Android emulators from Android Studio. Your installed apps and emulator data are untouched — only snapshots and scratch cache go. Close the emulator first."
+    },
+    {
+      "key": "CatDevCaches",
+      "en": "Developer caches"
+    },
+    {
+      "key": "CatDevCachesDesc",
+      "en": "Downloaded packages and build outputs from Maven, Gradle, Cargo and Go. Your tools re-download and rebuild them, so the next build is slower and needs the network. Your projects and settings are untouched."
+    },
+    {
+      "key": "CatVirtual",
+      "en": "Virtual machines & emulators"
+    },
+    {
+      "key": "CatVirtualDesc",
+      "en": "Sizes only. Virtual disks never shrink on their own, but Roomy never deletes them — a wrong delete destroys the whole machine. Compact or remove each one through its own tool; use the folder button to open it."
+    },
+    {
+      "key": "ItemChatGpt",
+      "en": "ChatGPT"
+    },
+    {
+      "key": "ItemClaude",
+      "en": "Claude"
+    },
+    {
+      "key": "ItemCursor",
+      "en": "Cursor"
+    },
+    {
+      "key": "ItemBattleNet",
+      "en": "Battle.net"
+    },
+    {
+      "key": "ItemEaApp",
+      "en": "EA app"
+    },
+    {
+      "key": "ItemGog",
+      "en": "GOG Galaxy"
+    },
+    {
+      "key": "ItemUbisoft",
+      "en": "Ubisoft Connect"
+    },
+    {
+      "key": "ItemObs",
+      "en": "OBS Studio"
+    },
+    {
+      "key": "ItemAdobeCache",
+      "en": "Adobe media cache"
+    },
+    {
+      "key": "ItemVisualStudio",
+      "en": "Visual Studio"
+    },
+    {
+      "key": "ItemChocolatey",
+      "en": "Chocolatey download cache"
+    },
+    {
+      "key": "ItemMaven",
+      "en": "Maven local repository"
+    },
+    {
+      "key": "ItemGradle",
+      "en": "Gradle caches"
+    },
+    {
+      "key": "ItemCargo",
+      "en": "Cargo registry cache"
+    },
+    {
+      "key": "ItemGoCache",
+      "en": "Go build & module cache"
+    },
+    {
+      "key": "ItemThumbnails",
+      "en": "Thumbnail and icon cache"
+    },
+    {
+      "key": "ItemVirtualBox",
+      "en": "VirtualBox VMs"
+    },
+    {
+      "key": "ItemVMware",
+      "en": "VMware VMs"
+    },
+    {
+      "key": "ItemHyperV",
+      "en": "Hyper-V virtual disks"
+    },
+    {
+      "key": "ItemDocker",
+      "en": "Docker Desktop disk"
+    },
+    {
+      "key": "ItemBlueStacks",
+      "en": "BlueStacks instances"
+    },
+    {
+      "key": "ItemLdPlayer",
+      "en": "LDPlayer instances"
+    },
+    {
+      "key": "ItemNox",
+      "en": "NoxPlayer instances"
+    },
+    {
+      "key": "ItemMemu",
+      "en": "MEmu instances"
+    },
+    {
+      "key": "VirtualNote",
+      "en": "Roomy only reports these sizes. Shrink or remove a virtual disk through its own tool — never by deleting its files, or the machine breaks."
+    },
+    {
+      "key": "VirtualItemDetail",
+      "en": "Open the folder, then compact or remove it in its own tool."
+    },
+    {
+      "key": "WinOldStagingNote",
+      "en": "This includes Windows upgrade staging folders. Only remove them through Windows, and only when no upgrade is in progress."
+    },
+    {
+      "key": "WindowsSettingsTitle",
+      "en": "Windows space settings"
+    },
+    {
+      "key": "WindowsSettingsHint",
+      "en": "Things Windows itself controls. Every change here goes through Windows' own tools, and everything is reversible."
+    },
+    {
+      "key": "HibernateTitle",
+      "en": "Allow hibernation"
+    },
+    {
+      "key": "HibernateHint",
+      "en": "Hibernation saves everything in memory to hiberfil.sys so your PC can fully power off and resume later. Turning it off deletes that file and frees its space, but also turns off Fast Startup, which uses the same file. You can turn it back on any time. Changing this needs admin approval."
+    },
+    {
+      "key": "HibernateStateOn",
+      "en": "Hibernation is on."
+    },
+    {
+      "key": "HibernateStateOff",
+      "en": "Hibernation is off."
+    },
+    {
+      "key": "HibernateFileSize",
+      "en": "hiberfil.sys is using {0}."
+    },
+    {
+      "key": "HibernateUnknown",
+      "en": "Couldn't read the hibernation setting on this PC."
+    },
+    {
+      "key": "HibernateTurnedOff",
+      "en": "Hibernation is off now — {0} freed."
+    },
+    {
+      "key": "HibernateTurnedOn",
+      "en": "Hibernation is on again."
+    },
+    {
+      "key": "HibernateCancelled",
+      "en": "Cancelled — nothing was changed."
+    },
+    {
+      "key": "HibernateFailed",
+      "en": "Couldn't change the hibernation setting: "
+    },
+    {
+      "key": "DeliveryOptTitle",
+      "en": "Delivery Optimization cache"
+    },
+    {
+      "key": "DeliveryOptHint",
+      "en": "Files Windows downloaded from other PCs to speed up updates. Safe to clear — Windows re-downloads what it needs. This is the same cache the Windows Update leftovers check finds."
+    },
+    {
+      "key": "DeliveryOptNeedsAdmin",
+      "en": "Needs admin — restart Roomy as admin to clear this cache from here."
+    },
+    {
+      "key": "ClearCacheNow",
+      "en": "Clear the cache now"
+    },
+    {
+      "key": "DeliveryOptCleared",
+      "en": "Cleared {0} from the Delivery Optimization cache."
+    },
+    {
+      "key": "DeliveryOptEmpty",
+      "en": "The Delivery Optimization cache is already empty."
+    },
+    {
+      "key": "WindowsSettingsDemoNote",
+      "en": "Windows settings can't be changed in demo mode."
     }
   ]
 }

@@ -687,4 +687,232 @@ public static class S
 
     /// <summary>{0} went to the Recycle Bin. Empty it when you're sure, to free that space too.</summary>
     public static string RecycledMessage => Loc.Get("RecycledMessage");
+
+    /// <summary>{0} items found · {1} of {2} checks done</summary>
+    public static string ScanTotalsLine => Loc.Get("ScanTotalsLine");
+
+    /// <summary>{0} {1} removed · {2} freed</summary>
+    public static string CleanStats => Loc.Get("CleanStats");
+
+    /// <summary>{0} moved to the Recycle Bin</summary>
+    public static string RecycledSoFar => Loc.Get("RecycledSoFar");
+
+    /// <summary>{0} {1} removed</summary>
+    public static string FilesRemovedTotal => Loc.Get("FilesRemovedTotal");
+
+    /// <summary>What was cleaned</summary>
+    public static string DoneBreakdownTitle => Loc.Get("DoneBreakdownTitle");
+
+    /// <summary>Deleted for good</summary>
+    public static string DeletedForGood => Loc.Get("DeletedForGood");
+
+    /// <summary>Bin emptied</summary>
+    public static string BinEmptied => Loc.Get("BinEmptied");
+
+    /// <summary>{0} deleted for good · {1} moved to the Recycle Bin</summary>
+    public static string DoneSplit => Loc.Get("DoneSplit");
+
+    /// <summary>Ready to clean up?</summary>
+    public static string ConfirmCleanTitle => Loc.Get("ConfirmCleanTitle");
+
+    /// <summary>The list shows where everything goes. Things in the Recycle Bin can be restored; deleted things are gone for good, and their space is freed right away.</summary>
+    public static string ConfirmMixedBody => Loc.Get("ConfirmMixedBody");
+
+    /// <summary>Clean up</summary>
+    public static string CleanUp => Loc.Get("CleanUp");
+
+    /// <summary>Goes to the Recycle Bin</summary>
+    public static string GoesToBin => Loc.Get("GoesToBin");
+
+    /// <summary>How Roomy removes things</summary>
+    public static string RemovalSectionTitle => Loc.Get("RemovalSectionTitle");
+
+    /// <summary>Choose where cleaned files go. You can change this any time.</summary>
+    public static string RemovalSectionHint => Loc.Get("RemovalSectionHint");
+
+    /// <summary>Your call items go to the Recycle Bin</summary>
+    public static string RemovalDefault => Loc.Get("RemovalDefault");
+
+    /// <summary>Files you're unsure about can be restored from the Recycle Bin. Caches and other safe stuff is deleted directly, since apps rebuild it.</summary>
+    public static string RemovalDefaultHint => Loc.Get("RemovalDefaultHint");
+
+    /// <summary>Everything goes to the Recycle Bin</summary>
+    public static string RemovalBin => Loc.Get("RemovalBin");
+
+    /// <summary>Nothing is deleted directly. Space is only freed when you empty the Recycle Bin.</summary>
+    public static string RemovalBinHint => Loc.Get("RemovalBinHint");
+
+    /// <summary>Everything is deleted permanently</summary>
+    public static string RemovalPermanent => Loc.Get("RemovalPermanent");
+
+    /// <summary>Space is freed right away. Nothing can be restored, so check your picks first.</summary>
+    public static string RemovalPermanentHint => Loc.Get("RemovalPermanentHint");
+
+    /// <summary>{0} to the Recycle Bin · {1} deleted for good</summary>
+    public static string SelectionSplitBoth => Loc.Get("SelectionSplitBoth");
+
+    /// <summary>{0} to the Recycle Bin — empty it to free that space</summary>
+    public static string SelectionSplitBin => Loc.Get("SelectionSplitBin");
+
+    /// <summary>Thumbnail &amp; icon cache</summary>
+    public static string CatThumbnails => Loc.Get("CatThumbnails");
+
+    /// <summary>Preview pictures Explorer built for your photos, videos and documents, plus cached app icons. Explorer rebuilds them as you browse, so folders may show generic icons for a bit.</summary>
+    public static string CatThumbnailsDesc => Loc.Get("CatThumbnailsDesc");
+
+    /// <summary>Android emulator cache</summary>
+    public static string CatAvd => Loc.Get("CatAvd");
+
+    /// <summary>Quick Boot snapshots and the temporary cache of Android emulators from Android Studio. Your installed apps and emulator data are untouched — only snapshots and scratch cache go. Close the emulator first.</summary>
+    public static string CatAvdDesc => Loc.Get("CatAvdDesc");
+
+    /// <summary>Developer caches</summary>
+    public static string CatDevCaches => Loc.Get("CatDevCaches");
+
+    /// <summary>Downloaded packages and build outputs from Maven, Gradle, Cargo and Go. Your tools re-download and rebuild them, so the next build is slower and needs the network. Your projects and settings are untouched.</summary>
+    public static string CatDevCachesDesc => Loc.Get("CatDevCachesDesc");
+
+    /// <summary>Virtual machines &amp; emulators</summary>
+    public static string CatVirtual => Loc.Get("CatVirtual");
+
+    /// <summary>Sizes only. Virtual disks never shrink on their own, but Roomy never deletes them — a wrong delete destroys the whole machine. Compact or remove each one through its own tool; use the folder button to open it.</summary>
+    public static string CatVirtualDesc => Loc.Get("CatVirtualDesc");
+
+    /// <summary>ChatGPT</summary>
+    public static string ItemChatGpt => Loc.Get("ItemChatGpt");
+
+    /// <summary>Claude</summary>
+    public static string ItemClaude => Loc.Get("ItemClaude");
+
+    /// <summary>Cursor</summary>
+    public static string ItemCursor => Loc.Get("ItemCursor");
+
+    /// <summary>Battle.net</summary>
+    public static string ItemBattleNet => Loc.Get("ItemBattleNet");
+
+    /// <summary>EA app</summary>
+    public static string ItemEaApp => Loc.Get("ItemEaApp");
+
+    /// <summary>GOG Galaxy</summary>
+    public static string ItemGog => Loc.Get("ItemGog");
+
+    /// <summary>Ubisoft Connect</summary>
+    public static string ItemUbisoft => Loc.Get("ItemUbisoft");
+
+    /// <summary>OBS Studio</summary>
+    public static string ItemObs => Loc.Get("ItemObs");
+
+    /// <summary>Adobe media cache</summary>
+    public static string ItemAdobeCache => Loc.Get("ItemAdobeCache");
+
+    /// <summary>Visual Studio</summary>
+    public static string ItemVisualStudio => Loc.Get("ItemVisualStudio");
+
+    /// <summary>Chocolatey download cache</summary>
+    public static string ItemChocolatey => Loc.Get("ItemChocolatey");
+
+    /// <summary>Maven local repository</summary>
+    public static string ItemMaven => Loc.Get("ItemMaven");
+
+    /// <summary>Gradle caches</summary>
+    public static string ItemGradle => Loc.Get("ItemGradle");
+
+    /// <summary>Cargo registry cache</summary>
+    public static string ItemCargo => Loc.Get("ItemCargo");
+
+    /// <summary>Go build &amp; module cache</summary>
+    public static string ItemGoCache => Loc.Get("ItemGoCache");
+
+    /// <summary>Thumbnail and icon cache</summary>
+    public static string ItemThumbnails => Loc.Get("ItemThumbnails");
+
+    /// <summary>VirtualBox VMs</summary>
+    public static string ItemVirtualBox => Loc.Get("ItemVirtualBox");
+
+    /// <summary>VMware VMs</summary>
+    public static string ItemVMware => Loc.Get("ItemVMware");
+
+    /// <summary>Hyper-V virtual disks</summary>
+    public static string ItemHyperV => Loc.Get("ItemHyperV");
+
+    /// <summary>Docker Desktop disk</summary>
+    public static string ItemDocker => Loc.Get("ItemDocker");
+
+    /// <summary>BlueStacks instances</summary>
+    public static string ItemBlueStacks => Loc.Get("ItemBlueStacks");
+
+    /// <summary>LDPlayer instances</summary>
+    public static string ItemLdPlayer => Loc.Get("ItemLdPlayer");
+
+    /// <summary>NoxPlayer instances</summary>
+    public static string ItemNox => Loc.Get("ItemNox");
+
+    /// <summary>MEmu instances</summary>
+    public static string ItemMemu => Loc.Get("ItemMemu");
+
+    /// <summary>Roomy only reports these sizes. Shrink or remove a virtual disk through its own tool — never by deleting its files, or the machine breaks.</summary>
+    public static string VirtualNote => Loc.Get("VirtualNote");
+
+    /// <summary>Open the folder, then compact or remove it in its own tool.</summary>
+    public static string VirtualItemDetail => Loc.Get("VirtualItemDetail");
+
+    /// <summary>This includes Windows upgrade staging folders. Only remove them through Windows, and only when no upgrade is in progress.</summary>
+    public static string WinOldStagingNote => Loc.Get("WinOldStagingNote");
+
+    /// <summary>Windows space settings</summary>
+    public static string WindowsSettingsTitle => Loc.Get("WindowsSettingsTitle");
+
+    /// <summary>Things Windows itself controls. Every change here goes through Windows' own tools, and everything is reversible.</summary>
+    public static string WindowsSettingsHint => Loc.Get("WindowsSettingsHint");
+
+    /// <summary>Allow hibernation</summary>
+    public static string HibernateTitle => Loc.Get("HibernateTitle");
+
+    /// <summary>Hibernation saves everything in memory to hiberfil.sys so your PC can fully power off and resume later. Turning it off deletes that file and frees its space, but also turns off Fast Startup, which uses the same file. You can turn it back on any time. Changing this needs admin approval.</summary>
+    public static string HibernateHint => Loc.Get("HibernateHint");
+
+    /// <summary>Hibernation is on.</summary>
+    public static string HibernateStateOn => Loc.Get("HibernateStateOn");
+
+    /// <summary>Hibernation is off.</summary>
+    public static string HibernateStateOff => Loc.Get("HibernateStateOff");
+
+    /// <summary>hiberfil.sys is using {0}.</summary>
+    public static string HibernateFileSize => Loc.Get("HibernateFileSize");
+
+    /// <summary>Couldn't read the hibernation setting on this PC.</summary>
+    public static string HibernateUnknown => Loc.Get("HibernateUnknown");
+
+    /// <summary>Hibernation is off now — {0} freed.</summary>
+    public static string HibernateTurnedOff => Loc.Get("HibernateTurnedOff");
+
+    /// <summary>Hibernation is on again.</summary>
+    public static string HibernateTurnedOn => Loc.Get("HibernateTurnedOn");
+
+    /// <summary>Cancelled — nothing was changed.</summary>
+    public static string HibernateCancelled => Loc.Get("HibernateCancelled");
+
+    /// <summary>Couldn't change the hibernation setting: </summary>
+    public static string HibernateFailed => Loc.Get("HibernateFailed");
+
+    /// <summary>Delivery Optimization cache</summary>
+    public static string DeliveryOptTitle => Loc.Get("DeliveryOptTitle");
+
+    /// <summary>Files Windows downloaded from other PCs to speed up updates. Safe to clear — Windows re-downloads what it needs. This is the same cache the Windows Update leftovers check finds.</summary>
+    public static string DeliveryOptHint => Loc.Get("DeliveryOptHint");
+
+    /// <summary>Needs admin — restart Roomy as admin to clear this cache from here.</summary>
+    public static string DeliveryOptNeedsAdmin => Loc.Get("DeliveryOptNeedsAdmin");
+
+    /// <summary>Clear the cache now</summary>
+    public static string ClearCacheNow => Loc.Get("ClearCacheNow");
+
+    /// <summary>Cleared {0} from the Delivery Optimization cache.</summary>
+    public static string DeliveryOptCleared => Loc.Get("DeliveryOptCleared");
+
+    /// <summary>The Delivery Optimization cache is already empty.</summary>
+    public static string DeliveryOptEmpty => Loc.Get("DeliveryOptEmpty");
+
+    /// <summary>Windows settings can't be changed in demo mode.</summary>
+    public static string WindowsSettingsDemoNote => Loc.Get("WindowsSettingsDemoNote");
 }

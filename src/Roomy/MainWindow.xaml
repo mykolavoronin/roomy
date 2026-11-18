@@ -94,10 +94,14 @@
                         </StackPanel>
                         <TextBlock Grid.Column="3" Text="{Binding SizeText}" FontSize="18" FontWeight="SemiBold"
                                    VerticalAlignment="Center" Margin="0,0,14,0" />
-                        <Border Grid.Column="4" CornerRadius="10" Padding="10,4" Background="{Binding BadgeBg}"
-                                VerticalAlignment="Center">
-                            <TextBlock Text="{Binding SafetyText}" FontSize="10.5" FontWeight="Bold" Foreground="{Binding BadgeFg}" />
-                        </Border>
+                        <StackPanel Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Right">
+                            <Border CornerRadius="10" Padding="10,4" Background="{Binding BadgeBg}" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding SafetyText}" FontSize="10.5" FontWeight="Bold" Foreground="{Binding BadgeFg}" />
+                            </Border>
+                            <TextBlock Text="{Binding DestinationText}" FontSize="11" Foreground="{StaticResource FaintBrush}"
+                                       HorizontalAlignment="Right" Margin="0,4,0,0"
+                                       Visibility="{Binding ShowDestination, Converter={StaticResource VisIf}}" />
+                        </StackPanel>
                         <Button Grid.Column="5" Style="{StaticResource IconButton}" HorizontalAlignment="Right"
                                 Content="{Binding ChevronGlyph}" Command="{Binding ToggleExpandCommand}"
                                 Visibility="{Binding HasDetails, Converter={StaticResource VisIf}}" />
@@ -291,12 +295,18 @@
                         </Grid>
                         <TextBlock Text="{x:Static loc:S.Scanning}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center"
                                    Margin="0,28,0,8" FontFamily="{StaticResource DisplayFont}" />
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding ScanStep}" Foreground="{StaticResource MutedBrush}" FontSize="13.5"
+                                   HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="640" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
                             <TextBlock Text="{x:Static loc:S.FoundPrefix}" Foreground="{StaticResource MutedBrush}" FontSize="15" />
                             <c:AnimatedBytes Bytes="{Binding ScanFound}" Foreground="{StaticResource AccentBrush}" FontSize="15" FontWeight="SemiBold" Duration="500" />
                             <TextBlock Text="{x:Static loc:S.FoundSuffix}" Foreground="{StaticResource MutedBrush}" FontSize="15" />
                         </StackPanel>
-                        <Border Style="{StaticResource Card}" Margin="0,28,0,0" Padding="16,12">
+                        <c:UsageBar Width="320" Height="4" Margin="0,16,0,0" Target="{Binding ScanFraction}"
+                                    Fill="{StaticResource AccentBrush}" Track="{StaticResource Surface2Brush}" />
+                        <TextBlock Text="{Binding ScanTotalsText}" Foreground="{StaticResource FaintBrush}" FontSize="12.5"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0" />
+                        <Border Style="{StaticResource Card}" Margin="0,22,0,0" Padding="16,12">
                             <ItemsControl ItemsSource="{Binding ScanSteps}" ItemTemplate="{StaticResource ScanStepTemplate}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -504,6 +514,8 @@
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="{x:Static loc:S.SelectedToClean}" FontSize="12" Foreground="{StaticResource MutedBrush}" />
                                 <c:AnimatedBytes Bytes="{Binding SelectedTotal}" FontSize="22" FontWeight="Bold" Duration="450" />
+                                <TextBlock Text="{Binding SelectionSplitText}" FontSize="12" Foreground="{StaticResource WarnBrush}"
+                                           Visibility="{Binding HasSelectionSplit, Converter={StaticResource VisIf}}" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Style="{StaticResource SecondaryButton}" Content="{x:Static loc:S.ScanAgain}" Command="{Binding ScanCommand}" Margin="0,0,10,0" />
@@ -528,8 +540,15 @@
                         <TextBlock Text="{x:Static loc:S.CleaningUp}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center"
                                    Margin="0,28,0,8" FontFamily="{StaticResource DisplayFont}" />
                         <TextBlock Text="{Binding CleanStep}" Foreground="{StaticResource MutedBrush}" FontSize="15" HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding CleanCurrentItem}" Foreground="{StaticResource FaintBrush}" FontSize="13"
+                                   HorizontalAlignment="Center" Margin="0,6,0,0" TextTrimming="CharacterEllipsis" MaxWidth="480" />
                         <c:UsageBar Height="8" Margin="0,28,0,0" Target="{Binding CleanProgress}"
                                     Fill="{StaticResource AccentGradient}" Track="{StaticResource Surface2Brush}" />
+                        <TextBlock Text="{Binding CleanStatsText}" Foreground="{StaticResource MutedBrush}"
+                                   FontSize="13" HorizontalAlignment="Center" Margin="0,14,0,0" />
+                        <TextBlock Text="{Binding CleanRecycledText}" Foreground="{StaticResource WarnBrush}"
+                                   FontSize="12.5" HorizontalAlignment="Center" Margin="0,6,0,0"
+                                   Visibility="{Binding HasCleanRecycled, Converter={StaticResource VisIf}}" />
                         <TextBlock Text="{x:Static loc:S.InUseSkipped}" Foreground="{StaticResource FaintBrush}"
                                    FontSize="12.5" HorizontalAlignment="Center" Margin="0,14,0,0" />
                     </StackPanel>
@@ -537,7 +556,9 @@
 
                 <!-- ============ DONE ============ -->
                 <Grid x:Name="DoneView" Visibility="Collapsed">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="600" Margin="0,0,0,30">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <Grid MinHeight="{Binding ViewportHeight, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="600" Margin="0,20,0,20">
                         <Border x:Name="DoneCheck" Width="84" Height="84" CornerRadius="42" Background="{StaticResource AccentGradient}"
                                 HorizontalAlignment="Center" RenderTransformOrigin="0.5,0.5">
                             <Border.RenderTransform>
@@ -548,9 +569,45 @@
                         <TextBlock Text="{x:Static loc:S.YouJustFreed}" FontSize="18" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,26,0,0" />
                         <c:AnimatedBytes Bytes="{Binding Freed}" FontSize="78" FontWeight="Bold" FontFamily="{StaticResource DisplayFont}"
                                          Foreground="{StaticResource AccentGradient}" HorizontalAlignment="Center" Duration="1500" />
-                        <TextBlock Text="{Binding DoneSubtitle}" FontSize="15" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding FilesRemovedText}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding DoneSubtitle}" FontSize="15" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,4,0,0" />
 
-                        <Border Style="{StaticResource Card}" Padding="22,18" Margin="0,26,0,0">
+                        <Border Style="{StaticResource Card}" Padding="18,14" Margin="0,22,0,0"
+                                Visibility="{Binding HasDoneBreakdown, Converter={StaticResource VisIf}}">
+                            <StackPanel>
+                                <TextBlock Text="{x:Static loc:S.DoneBreakdownTitle}" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                <ScrollViewer MaxHeight="190" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                    <ItemsControl ItemsSource="{Binding DoneCategories}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,7">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                                        <TextBlock Text="{Binding Title}" FontSize="13.5" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding FilesText}" FontSize="12" Foreground="{StaticResource FaintBrush}"
+                                                                   Visibility="{Binding HasFiles, Converter={StaticResource VisIf}}" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Text="{Binding AmountText}" FontSize="13.5" FontWeight="SemiBold"
+                                                               VerticalAlignment="Center" Margin="0,0,10,0" />
+                                                    <Border Grid.Column="2" CornerRadius="9" Padding="8,3" Background="{Binding DestinationBg}"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding DestinationText}" FontSize="11" FontWeight="SemiBold"
+                                                                   Foreground="{Binding DestinationFg}" />
+                                                    </Border>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Padding="22,18" Margin="0,22,0,0">
                             <StackPanel>
                                 <Grid>
                                     <TextBlock Text="{x:Static loc:S.Before}" FontSize="12" Foreground="{StaticResource MutedBrush}" />
@@ -567,6 +624,8 @@
                             </StackPanel>
                         </Border>
 
+                        <TextBlock Text="{Binding DoneSplitText}" FontSize="12.5" Foreground="{StaticResource WarnBrush}" TextWrapping="Wrap"
+                                   TextAlignment="Center" Margin="0,14,0,0" Visibility="{Binding HasDoneSplit, Converter={StaticResource VisIf}}" />
                         <TextBlock Text="{Binding RecycledText}" FontSize="12.5" Foreground="{StaticResource FaintBrush}" TextWrapping="Wrap"
                                    TextAlignment="Center" Margin="0,14,0,0" Visibility="{Binding HasRecycled, Converter={StaticResource VisIf}}" />
                         <TextBlock Text="{Binding SkippedText}" FontSize="12.5" Foreground="{StaticResource FaintBrush}" TextWrapping="Wrap"
@@ -582,6 +641,8 @@
                             <Button Style="{StaticResource SecondaryButton}" Content="{x:Static loc:S.Done}" Command="{Binding HomeCommand}" Margin="10,0,0,0" Padding="22,12" />
                         </StackPanel>
                     </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
                 </Grid>
             </Grid>
         </Grid>
@@ -593,7 +654,35 @@
                 <StackPanel>
                     <TextBlock Text="{Binding ConfirmTitle}" FontSize="20" FontWeight="Bold" />
                     <TextBlock Text="{Binding ConfirmBody}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
-                               Margin="0,10,0,22" LineHeight="21" />
+                               Margin="0,10,0,0" LineHeight="21" />
+                    <Border Margin="0,16,0,22" Padding="14,8" CornerRadius="12" Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                            Visibility="{Binding HasConfirmLines, Converter={StaticResource VisIf}}">
+                        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding ConfirmLines}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Title}" FontSize="13.5" VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                                            <TextBlock Grid.Column="1" Text="{Binding SizeText}" FontSize="13.5" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center" Margin="0,0,10,0" />
+                                            <Border Grid.Column="2" CornerRadius="9" Padding="8,3" Background="{Binding DestinationBg}"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding DestinationText}" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{Binding DestinationFg}" />
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Style="{StaticResource SecondaryButton}" Content="{x:Static loc:S.Cancel}" Command="{Binding ConfirmNoCommand}" Margin="0,0,10,0" />
                         <Button Style="{StaticResource PrimaryButton}" Content="{Binding ConfirmYesText}" Command="{Binding ConfirmYesCommand}" Padding="20,12" />

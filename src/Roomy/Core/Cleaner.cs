@@ -3,43 +3,72 @@ namespace Roomy.Core;
 
 public sealed record CleanJob(CleanupCategory Category, IReadOnlyList<CleanupItem> Items);
 
+/// <summary>Where one category's files ended up.</summary>
+public enum CleanDestination
+{
+    /// <summary>Deleted directly. The space is freed right away.</summary>
+    Deleted,
+    /// <summary>Moved to the Recycle Bin. The space is freed once the bin is emptied.</summary>
+    Recycled,
+    /// <summary>The Recycle Bin itself was emptied.</summary>
+    BinEmptied,
+}
+
+/// <summary>What one category contributed to a cleanup, for the done screen.</summary>
+public sealed record CategoryCleanResult(string CategoryId, string Title, long Freed, long Recycled, long Skipped, int Files, CleanDestination Destination);
+
+/// <summary>Live progress during a cleanup. Every value is measured, never estimated.</summary>
+public sealed record CleanProgress(double Fraction, string Step, string CurrentItem, long FreedSoFar, long RecycledSoFar, int FilesSoFar);
+
 /// <param name="Recycled">Bytes moved to the Recycle Bin. They are not counted in <paramref name="Freed"/>.</param>
-public sealed record CleanResult(long Freed, long Skipped, int Files, long Recycled = 0);
+public sealed record CleanResult(long Freed, long Skipped, int Files, long Recycled = 0, IReadOnlyList<CategoryCleanResult>? Categories = null);
 
 public static class Cleaner
 {
-    /// <param name="recycleReview">Send "your call" files (Downloads) to the Recycle Bin instead of deleting them.</param>
-    public static CleanResult Run(IReadOnlyList<CleanJob> jobs, IProgress<(double Fraction, string Step)>? progress,
-        bool recycleReview = false, CancellationToken ct = default)
+    /// <param name="mode">Where cleaned files go. By default, "your call" items go to the Recycle Bin.</param>
+    public static CleanResult Run(IReadOnlyList<CleanJob> jobs, IProgress<CleanProgress>? progress,
+        RemovalMode mode = RemovalMode.ReviewToBin, CancellationToken ct = default)
     {
         long total = Math.Max(1, jobs.Sum(j => j.Items.Sum(i => i.Size)));
         long done = 0, freed = 0, skipped = 0, recycled = 0;
         int files = 0;
+        var perCategory = new List<CategoryCleanResult>();
 
         // Empty the bin before recycling anything, so this cleanup never wipes the files it just recycled.
-        if (recycleReview) jobs = jobs.OrderBy(j => j.Category.Action == CleanAction.EmptyRecycleBin ? 0 : 1).ToList();
+        if (mode != RemovalMode.EverythingPermanent)
+            jobs = jobs.OrderBy(j => j.Category.Action == CleanAction.EmptyRecycleBin ? 0 : 1).ToList();
 
         foreach (var job in jobs)
         {
             var step = Loc.Format("CleaningCategory", job.Category.Title.ToLowerInvariant());
-            progress?.Report(((double)done / total, step));
+            progress?.Report(new CleanProgress((double)done / total, step, "", freed, recycled, files));
+            long jobFreed = 0, jobRecycled = 0, jobSkipped = 0;
+            int jobFiles = 0;
 
             if (job.Category.Action == CleanAction.EmptyRecycleBin)
             {
                 long size = job.Items.Sum(i => i.Size);
-                var (before, _) = Native.QueryRecycleBin();
+                var (before, beforeItems) = Native.QueryRecycleBin();
                 Native.SHEmptyRecycleBin(IntPtr.Zero, null,
                     Native.SHERB_NOCONFIRMATION | Native.SHERB_NOPROGRESSUI | Native.SHERB_NOSOUND);
-                var (after, _) = Native.QueryRecycleBin();
+                var (after, afterItems) = Native.QueryRecycleBin();
                 long got = Math.Max(0, before - after);
+                int gotFiles = (int)Math.Max(0, beforeItems - afterItems);
                 freed += got;
-                skipped += Math.Max(0, size - got);
+                files += gotFiles;
+                jobFreed = got;
+                jobFiles = gotFiles;
+                jobSkipped = Math.Max(0, size - got);
+                skipped += jobSkipped;
                 done += size;
+                perCategory.Add(new CategoryCleanResult(job.Category.Id, job.Category.Title,
+                    jobFreed, 0, jobSkipped, jobFiles, CleanDestination.BinEmptied));
+                progress?.Report(new CleanProgress((double)done / total, step, "", freed, recycled, files));
                 continue;
             }
 
             if (job.Category.Action != CleanAction.Delete) continue;
-            bool recycle = recycleReview && job.Category.Safety == Safety.Review;
+            bool recycle = RemovalPolicy.GoesToBin(mode, job.Category);
 
             foreach (var item in job.Items)
             {
@@ -49,31 +78,40 @@ public static class Cleaner
                 {
                     try
                     {
-                        if (recycle && item.IsFile)
+                        if (recycle)
                         {
-                            var r = FileOps.Recycle(p, item.MinAge);
+                            var r = FileOps.RecycleContents(p, item.MinAge, ct);
                             recycled += r.Freed;
+                            jobRecycled += r.Freed;
                             files += r.Files;
+                            jobFiles += r.Files;
                             got += r.Freed;
                         }
                         else
                         {
                             var r = FileOps.Delete(p, item.MinAge, ct);
                             freed += r.Freed;
+                            jobFreed += r.Freed;
                             got += r.Freed;
                             files += r.Files;
+                            jobFiles += r.Files;
                         }
                     }
                     catch (OperationCanceledException) { throw; }
                     catch { /* protected or vanished: skip */ }
                 }
-                skipped += Math.Max(0, item.Size - got);
+                long itemSkipped = Math.Max(0, item.Size - got);
+                skipped += itemSkipped;
+                jobSkipped += itemSkipped;
                 done += item.Size;
-                progress?.Report(((double)done / total, step));
+                progress?.Report(new CleanProgress((double)done / total, step, item.Name, freed, recycled, files));
             }
+            perCategory.Add(new CategoryCleanResult(job.Category.Id, job.Category.Title,
+                jobFreed, jobRecycled, jobSkipped, jobFiles,
+                recycle ? CleanDestination.Recycled : CleanDestination.Deleted));
         }
 
-        progress?.Report((1, S.AllDone));
-        return new CleanResult(freed, skipped, files, recycled);
+        progress?.Report(new CleanProgress(1, S.AllDone, "", freed, recycled, files));
+        return new CleanResult(freed, skipped, files, recycled, perCategory);
     }
 }

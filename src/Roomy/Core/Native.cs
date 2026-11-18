@@ -48,12 +48,19 @@ internal static class Native
     /// Moves one file to the Recycle Bin. If it can't be recycled (too big, or no bin on that drive),
     /// Windows asks before deleting it for good instead of doing that silently.
     /// </summary>
-    public static bool SendToRecycleBin(string path)
+    public static bool SendToRecycleBin(string path) => SendFilesToRecycleBin([path]);
+
+    /// <summary>
+    /// Moves several files to the Recycle Bin in one shell call. Same behaviour as
+    /// <see cref="SendToRecycleBin"/>: files that can't be recycled prompt before permanent deletion.
+    /// </summary>
+    public static bool SendFilesToRecycleBin(IReadOnlyList<string> paths)
     {
+        if (paths.Count == 0) return true;
         var op = new SHFILEOPSTRUCT
         {
             wFunc = FO_DELETE,
-            pFrom = path + "\0\0",
+            pFrom = string.Join('\0', paths) + "\0\0",
             fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_NOERRORUI | FOF_WANTNUKEWARNING,
         };
         return SHFileOperation(ref op) == 0 && !op.fAnyOperationsAborted;

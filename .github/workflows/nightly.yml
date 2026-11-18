@@ -1,0 +1,45 @@
+name: Nightly build
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/**", "tests/**", ".github/workflows/nightly.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - run: dotnet build src/Roomy -c Release
+      - run: dotnet test tests/Roomy.Tests -c Release
+
+      - name: Publish single-file exe
+        shell: pwsh
+        run: |
+          dotnet publish src/Roomy -c Release -r win-x64 --self-contained `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true -p:DebugType=none -o dist/publish
+          Copy-Item dist/publish/Roomy.exe dist/Roomy-portable.exe
+
+      - name: Upload to the nightly release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "nightly" 2>$null
+          if ($LASTEXITCODE -ne 0) { gh release create "nightly" --prerelease --title "Nightly build" --notes "Automatic build from the latest code on main. It may be unfinished — use the latest stable release for the tested version." }
+          gh release upload "nightly" dist/Roomy-portable.exe --clobber
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Roomy-portable
+          path: dist/Roomy-portable.exe

@@ -93,6 +93,34 @@ public sealed class JunctionTests : IDisposable
     }
 
     [Fact]
+    public void JunctionInAnAncestorIsNotRecycled()
+    {
+        var link = Path.Combine(_root, "junction");
+        Junction(link, _target);
+
+        var r = FileOps.RecycleContents(Path.Combine(link, "cache"), null);
+
+        Assert.Equal(0, r.Files);
+        Assert.True(File.Exists(_sentinel));
+    }
+
+    [Fact]
+    public void JunctionInsideTheTreeIsNotRecycled()
+    {
+        // The one real file goes through the shell, so CI (possibly no Recycle Bin) is skipped.
+        if (Environment.GetEnvironmentVariable("CI") == "true") return;
+        var cache = Path.Combine(_root, "real-cache");
+        Directory.CreateDirectory(cache);
+        File.WriteAllText(Path.Combine(cache, "junk.tmp"), "x");
+        Junction(Path.Combine(cache, "link"), _target);
+
+        var r = FileOps.RecycleContents(cache, null);
+
+        Assert.Equal(1, r.Files);
+        Assert.True(File.Exists(_sentinel));
+    }
+
+    [Fact]
     public void NormalFoldersStillGetCleaned()
     {
         var cache = Path.Combine(_root, "plain");

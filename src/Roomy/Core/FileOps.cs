@@ -124,6 +124,77 @@ public static class FileOps
         return Native.SendToRecycleBin(real) && !File.Exists(real) ? new(len, 1, 0) : new(0, 0, 1);
     }
 
+    /// <summary>
+    /// Sends a file, or the contents of a folder (the folder itself stays), to the Recycle Bin.
+    /// Same guards as <see cref="Delete"/>: nothing is reached through a junction or symlink,
+    /// protected locations are refused, and files that are in use are skipped, never forced.
+    /// Files go to the bin in batches through one shell call each; a file only counts as
+    /// recycled once it is actually gone. Now-empty subfolders are tidied up afterwards.
+    /// </summary>
+    public static DeleteResult RecycleContents(string path, TimeSpan? minAge, CancellationToken ct = default)
+    {
+        var cutoff = Cutoff(minAge);
+        if (SafeFs.TrustedPath(path) is not { } root) return default;
+        Guard(path);
+        Guard(root);
+
+        if (File.Exists(root)) return Recycle(root, minAge);
+        if (!Directory.Exists(root)) return default;
+
+        List<(string, long, DateTime)> files;
+        try
+        {
+            files = new FileSystemEnumerable<(string, long, DateTime)>(root,
+                (ref FileSystemEntry x) => (x.ToFullPath(), x.Length, x.LastWriteTimeUtc.UtcDateTime), Deep())
+            {
+                ShouldIncludePredicate = (ref FileSystemEntry x) => !x.IsDirectory,
+            }.ToList();
+        }
+        catch { return default; }
+
+        // Only files that really live under the checked root, and are old enough, go to the bin.
+        var candidates = new List<(string Path, long Len)>();
+        foreach (var (p, len, mod) in files)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (mod > cutoff) continue;
+            var real = SafeFs.TrustedPath(p);
+            if (real is null || !SafeFs.IsInside(real, root)) continue;
+            candidates.Add((real, len));
+        }
+
+        long freed = 0;
+        int ok = 0, failed = 0;
+        const int batch = 200;
+        for (int i = 0; i < candidates.Count; i += batch)
+        {
+            ct.ThrowIfCancellationRequested();
+            var chunk = candidates.Skip(i).Take(batch).ToList();
+            Native.SendFilesToRecycleBin(chunk.Select(c => c.Path).ToList());
+            foreach (var (p, len) in chunk)
+            {
+                if (!File.Exists(p)) { freed += len; ok++; }
+                else failed++;
+            }
+        }
+
+        // Tidy up now-empty subfolders, deepest first. Never removes the root.
+        try
+        {
+            var dirs = new FileSystemEnumerable<string>(root, (ref FileSystemEntry x) => x.ToFullPath(), Deep())
+            {
+                ShouldIncludePredicate = (ref FileSystemEntry x) => x.IsDirectory,
+            }.ToList();
+            foreach (var d in dirs.OrderByDescending(d => d.Count(ch => ch == '\\')))
+            {
+                SafeFs.Delete(d, root); // only succeeds if the folder is empty
+            }
+        }
+        catch { }
+
+        return new(freed, ok, failed);
+    }
+
     static readonly string[] Protected = new[]
     {
         Env.SystemRoot, Env.Windows, Path.Combine(Env.Windows, "System32"), Env.UserProfile,

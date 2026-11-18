@@ -24,6 +24,10 @@
     <Compile Include="../../src/Roomy/Core/Native.cs" Link="Core/Native.cs" />
     <Compile Include="../../src/Roomy/Core/Models.cs" Link="Core/Models.cs" />
     <Compile Include="../../src/Roomy/Core/Cleaner.cs" Link="Core/Cleaner.cs" />
+    <Compile Include="../../src/Roomy/Core/Scanner.cs" Link="Core/Scanner.cs" />
+    <Compile Include="../../src/Roomy/Core/Steam.cs" Link="Core/Steam.cs" />
+    <Compile Include="../../src/Roomy/Core/Format.cs" Link="Core/Format.cs" />
+    <Compile Include="../../src/Roomy/Core/WindowsFeatures.cs" Link="Core/WindowsFeatures.cs" />
     <Compile Include="../../src/Roomy/Localization/Loc.cs" Link="Localization/Loc.cs" />
     <Compile Include="../../src/Roomy/Localization/S.g.cs" Link="Localization/S.g.cs" />
     <EmbeddedResource Include="../../src/Roomy/Localization/Strings.resx" Link="Localization/Strings.resx">

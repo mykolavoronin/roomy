@@ -14,6 +14,9 @@ public partial class SettingsWindow : Window
     DateTimeOffset? _snoozedUntil;
     bool _pauseChanged;
     bool _saving;
+    bool _windowsBusy;
+    bool? _hibernateOn;
+    long _hiberfilSize;
 
     public SettingsWindow(DesktopController desktop)
     {
@@ -25,7 +28,9 @@ public partial class SettingsWindow : Window
         BackgroundCheck.IsChecked = p.RunInBackground;
         LowSpaceCheck.IsChecked = p.LowSpaceAlerts;
         WeeklyCheck.IsChecked = p.WeeklyChecks;
-        RecycleCheck.IsChecked = p.RecycleDownloads;
+        RemovalDefaultRadio.IsChecked = p.Removal == RemovalMode.ReviewToBin;
+        RemovalBinRadio.IsChecked = p.Removal == RemovalMode.EverythingToBin;
+        RemovalPermanentRadio.IsChecked = p.Removal == RemovalMode.EverythingPermanent;
         ThresholdBox.Text = p.LowSpaceGB.ToString(CultureInfo.InvariantCulture);
         IntervalBox.SelectedValue = p.CheckEveryMinutes.ToString(CultureInfo.InvariantCulture);
         _snoozedUntil = p.SnoozedUntil;
@@ -33,6 +38,13 @@ public partial class SettingsWindow : Window
         Options.IsEnabled = desktop.CanConfigure;
         SaveButton.IsEnabled = false;
         StatusText.Text = desktop.Status ?? "";
+        // The Windows card is live system state, not a saved preference: it stays usable
+        // when running as admin (when the saved settings above are locked), but never in
+        // demo mode, where nothing on the real PC may change.
+        WindowsCard.IsEnabled = !desktop.IsDemo;
+        if (desktop.IsDemo) WindowsStatus.Text = S.WindowsSettingsDemoNote;
+        ClearDeliveryOptButton.IsEnabled = false;
+        Loaded += async (_, _) => await ReadWindowsStateAsync();
         SourceInitialized += (_, _) =>
         {
             int dark = 1;
@@ -129,7 +141,9 @@ public partial class SettingsWindow : Window
                 RunInBackground = BackgroundCheck.IsChecked == true || start,
                 LowSpaceAlerts = LowSpaceCheck.IsChecked == true,
                 WeeklyChecks = WeeklyCheck.IsChecked == true,
-                RecycleDownloads = RecycleCheck.IsChecked == true,
+                Removal = RemovalBinRadio.IsChecked == true ? RemovalMode.EverythingToBin
+                    : RemovalPermanentRadio.IsChecked == true ? RemovalMode.EverythingPermanent
+                    : RemovalMode.ReviewToBin,
                 LowSpaceGB = threshold,
                 CheckEveryMinutes = IntervalBox.SelectedValue as string == "60" ? 60 : 30,
                 SnoozedUntil = _pauseChanged ? _snoozedUntil : current.SnoozedUntil,
@@ -158,4 +172,82 @@ public partial class SettingsWindow : Window
     void StartupSettings_Click(object sender, RoutedEventArgs e) => Shell.Open("ms-settings:startupapps");
     void NotificationSettings_Click(object sender, RoutedEventArgs e) => Shell.Open("ms-settings:notifications");
     void Cancel_Click(object sender, RoutedEventArgs e) => Close();
+
+    // ---------- Windows space settings (live system state, applied immediately) ----------
+
+    async Task ReadWindowsStateAsync()
+    {
+        if (_desktop.IsDemo) return;
+        var (enabled, size) = await Task.Run(() => (WindowsFeatures.HibernationEnabled(), WindowsFeatures.HiberfilSize()));
+        _hibernateOn = enabled;
+        _hiberfilSize = size;
+        ShowHibernateState();
+        ClearDeliveryOptButton.IsEnabled = Admin.IsElevated;
+        DeliveryOptAdminText.Visibility = Admin.IsElevated ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    void ShowHibernateState()
+    {
+        HibernateCheck.IsChecked = _hibernateOn ?? false;
+        HibernateCheck.IsEnabled = _hibernateOn.HasValue;
+        HibernateStateText.Text = _hibernateOn is null ? S.HibernateUnknown
+            : (_hibernateOn.Value ? S.HibernateStateOn : S.HibernateStateOff)
+              + (_hiberfilSize > 0 ? " " + Loc.Format("HibernateFileSize", Format.Bytes(_hiberfilSize)) : "");
+    }
+
+    async void Hibernate_Click(object sender, RoutedEventArgs e)
+    {
+        if (_windowsBusy || _hibernateOn is null) return;
+        bool want = HibernateCheck.IsChecked == true;
+        if (want == _hibernateOn.Value) return;
+        _windowsBusy = true;
+        WindowsCard.IsEnabled = false;
+        WindowsStatus.Text = "";
+        try
+        {
+            var before = _hiberfilSize;
+            var (result, error) = await WindowsFeatures.SetHibernationAsync(want);
+            var (enabled, size) = await Task.Run(() => (WindowsFeatures.HibernationEnabled(), WindowsFeatures.HiberfilSize()));
+            _hibernateOn = enabled;
+            _hiberfilSize = size;
+            ShowHibernateState();
+            WindowsStatus.Text = result switch
+            {
+                HibernationResult.Applied => want
+                    ? S.HibernateTurnedOn
+                    : Loc.Format("HibernateTurnedOff", Format.Bytes(Math.Max(0, before - size))),
+                HibernationResult.Cancelled => S.HibernateCancelled,
+                _ => error ?? S.HibernateUnknown,
+            };
+        }
+        finally
+        {
+            _windowsBusy = false;
+            WindowsCard.IsEnabled = !_desktop.IsDemo;
+        }
+    }
+
+    async void ClearDeliveryOpt_Click(object sender, RoutedEventArgs e)
+    {
+        if (_windowsBusy) return;
+        _windowsBusy = true;
+        ClearDeliveryOptButton.IsEnabled = false;
+        WindowsStatus.Text = "";
+        try
+        {
+            var r = await Task.Run(() => WindowsFeatures.ClearDeliveryOptimizationCache());
+            WindowsStatus.Text = r.Freed > 0
+                ? Loc.Format("DeliveryOptCleared", Format.Bytes(r.Freed))
+                : S.DeliveryOptEmpty;
+        }
+        catch (Exception ex)
+        {
+            WindowsStatus.Text = ex.Message;
+        }
+        finally
+        {
+            _windowsBusy = false;
+            ClearDeliveryOptButton.IsEnabled = Admin.IsElevated && !_desktop.IsDemo;
+        }
+    }
 }

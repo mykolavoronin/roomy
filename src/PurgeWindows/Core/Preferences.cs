@@ -3,6 +3,22 @@ using PurgeWindows.Localization;
 
 namespace PurgeWindows.Core;
 
+/// <summary>
+/// The mod-verdict override (D-13): the user's explicit, reversible choice to treat their
+/// Windows as stock or as modified, regardless of what detection found. An override can
+/// never create brand evidence: forcing "modified" yields a generic modified verdict.
+/// Serialized as a number in settings.json; values are stable — do not renumber.
+/// </summary>
+public enum ModVerdictOverride
+{
+    /// <summary>No override: use the detected verdict.</summary>
+    None = 0,
+    /// <summary>Treat this Windows as stock, whatever detection found.</summary>
+    TreatAsStock = 1,
+    /// <summary>Treat this Windows as modified (generic — never a brand name).</summary>
+    TreatAsModified = 2,
+}
+
 public sealed record Preferences
 {
     public bool RunInBackground { get; init; }
@@ -17,6 +33,8 @@ public sealed record Preferences
     /// <summary>After how many days without changes a developer project counts as stale (0 = show all).
     /// Allowed values: 0, 30, 90, 180, 365, 730. Default 180.</summary>
     public int DevToolsStalenessDays { get; init; } = 180;
+    /// <summary>The user's mod-verdict override (D-13). Default: no override, use detection.</summary>
+    public ModVerdictOverride ModOverride { get; init; }
     public DateTimeOffset? SnoozedUntil { get; init; }
     public DateTimeOffset? LastNotification { get; init; }
     public DateTimeOffset? LastWeeklyCheck { get; init; }
@@ -32,6 +50,8 @@ public sealed record Preferences
             ? Removal : RemovalMode.ReviewToBin,
         DevToolsStalenessDays = DevToolsStalenessDays is 0 or 30 or 90 or 180 or 365 or 730
             ? DevToolsStalenessDays : 180,
+        ModOverride = ModOverride is ModVerdictOverride.None or ModVerdictOverride.TreatAsStock or ModVerdictOverride.TreatAsModified
+            ? ModOverride : ModVerdictOverride.None,
     };
 }
 

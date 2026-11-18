@@ -32,6 +32,18 @@
     <Compile Include="../../src/PurgeWindows/Core/SafetyLevel.cs" Link="Core/SafetyLevel.cs" />
     <Compile Include="../../src/PurgeWindows/Core/DeletionSafetyPolicy.cs" Link="Core/DeletionSafetyPolicy.cs" />
     <Compile Include="../../src/PurgeWindows/Core/CategoryCatalog.cs" Link="Core/CategoryCatalog.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/ProbeModels.cs" Link="Core/Environment/ProbeModels.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/AntivirusState.cs" Link="Core/Environment/AntivirusState.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/ModScoring.cs" Link="Core/Environment/ModScoring.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/EnvironmentDataSource.cs" Link="Core/Environment/EnvironmentDataSource.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/EnvironmentNative.cs" Link="Core/Environment/EnvironmentNative.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/WmiClient.cs" Link="Core/Environment/WmiClient.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/WscProductSource.cs" Link="Core/Environment/WscProductSource.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/WindowsEnvironmentDataSource.cs" Link="Core/Environment/WindowsEnvironmentDataSource.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/EnvironmentProbes.cs" Link="Core/Environment/EnvironmentProbes.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/EnvironmentSnapshot.cs" Link="Core/Environment/EnvironmentSnapshot.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/CategoryGate.cs" Link="Core/Environment/CategoryGate.cs" />
+    <Compile Include="../../src/PurgeWindows/Core/Environment/EnvironmentDisclosure.cs" Link="Core/Environment/EnvironmentDisclosure.cs" />
     <Compile Include="../../src/PurgeWindows/Core/ExplanationResolver.cs" Link="Core/ExplanationResolver.cs" />
     <Compile Include="../../src/PurgeWindows/Core/ScanQueue.cs" Link="Core/ScanQueue.cs" />
     <Compile Include="../../src/PurgeWindows/Core/ScanCoalescer.cs" Link="Core/ScanCoalescer.cs" />

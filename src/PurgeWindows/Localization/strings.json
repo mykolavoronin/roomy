@@ -1822,6 +1822,434 @@
     {
       "key": "CleanFigureOfTotal",
       "en": "of {0}"
+    },
+    {
+      "key": "EnvOsFormat",
+      "en": "{0} {1} (build {2})"
+    },
+    {
+      "key": "EnvOsFormatNoVersion",
+      "en": "{0} (build {1})"
+    },
+    {
+      "key": "EnvOsBuildOnly",
+      "en": "Windows build {0}"
+    },
+    {
+      "key": "EnvOsUnknown",
+      "en": "Windows version unknown"
+    },
+    {
+      "key": "EnvModStock",
+      "en": "Stock Windows — no modification signs found."
+    },
+    {
+      "key": "EnvModComponentsMissing",
+      "en": "Some built-in Windows components are missing or disabled."
+    },
+    {
+      "key": "EnvModModifiedOther",
+      "en": "A modified Windows installation."
+    },
+    {
+      "key": "EnvModLikelyReviOS",
+      "en": "A modified Windows installation (looks like ReviOS)."
+    },
+    {
+      "key": "EnvModUnknown",
+      "en": "Windows modification status unknown."
+    },
+    {
+      "key": "EnvOverrideActiveNote",
+      "en": "(Your override is applied.)"
+    },
+    {
+      "key": "EnvAvNoneRegistered",
+      "en": "No antivirus registered with Windows Security Center."
+    },
+    {
+      "key": "EnvAvStateEnabled",
+      "en": "on"
+    },
+    {
+      "key": "EnvAvStateDisabled",
+      "en": "off or snoozed"
+    },
+    {
+      "key": "EnvAvStateOutOfDate",
+      "en": "out of date"
+    },
+    {
+      "key": "EnvAvStateUnknown",
+      "en": "state unknown"
+    },
+    {
+      "key": "EnvAvProductFormat",
+      "en": "{0} ({1})"
+    },
+    {
+      "key": "EnvPrivilegeAdmin",
+      "en": "Running as administrator."
+    },
+    {
+      "key": "EnvPrivilegeStandard",
+      "en": "Running as a standard user."
+    },
+    {
+      "key": "EnvValueUnknown",
+      "en": "Unknown"
+    },
+    {
+      "key": "EnvValueOn",
+      "en": "On"
+    },
+    {
+      "key": "EnvValueOff",
+      "en": "Off"
+    },
+    {
+      "key": "EnvValueEnabled",
+      "en": "Enabled"
+    },
+    {
+      "key": "EnvValuePresent",
+      "en": "Present"
+    },
+    {
+      "key": "EnvValueAbsent",
+      "en": "Absent"
+    },
+    {
+      "key": "EnvWin10Notice",
+      "en": "Windows 10 is out of support — consider upgrading."
+    },
+    {
+      "key": "EnvProbeOs",
+      "en": "Windows version"
+    },
+    {
+      "key": "EnvProbeComponents",
+      "en": "Built-in components"
+    },
+    {
+      "key": "EnvProbeModMarkers",
+      "en": "Modification signs"
+    },
+    {
+      "key": "EnvProbeAntivirus",
+      "en": "Antivirus"
+    },
+    {
+      "key": "EnvProbeServices",
+      "en": "Services"
+    },
+    {
+      "key": "EnvProbeUpdates",
+      "en": "Windows Update"
+    },
+    {
+      "key": "EnvProbeStorageSense",
+      "en": "Storage Sense"
+    },
+    {
+      "key": "EnvProbeOneDrive",
+      "en": "OneDrive"
+    },
+    {
+      "key": "EnvProbeManaged",
+      "en": "Managed by an organisation"
+    },
+    {
+      "key": "EnvProbeVirtualization",
+      "en": "Virtualization"
+    },
+    {
+      "key": "EnvProbeHardware",
+      "en": "Hardware"
+    },
+    {
+      "key": "EnvProbePending",
+      "en": "Pending operations"
+    },
+    {
+      "key": "EnvProbeReasonTimedOut",
+      "en": "timed out"
+    },
+    {
+      "key": "EnvProbeReasonAccessDenied",
+      "en": "access denied"
+    },
+    {
+      "key": "EnvProbeReasonQueryFailed",
+      "en": "check failed"
+    },
+    {
+      "key": "EnvProbeReasonNotAvailable",
+      "en": "not available"
+    },
+    {
+      "key": "EnvProbeUnknownWithReason",
+      "en": "Unknown ({0})"
+    },
+    {
+      "key": "EnvComponentsSummary",
+      "en": "{0} present, {1} absent, {2} unknown"
+    },
+    {
+      "key": "EnvMarkersObserved",
+      "en": "{0} markers observed"
+    },
+    {
+      "key": "EnvServicesSummary",
+      "en": "{0} running, {1} stopped or disabled, {2} unknown"
+    },
+    {
+      "key": "EnvUpdateSummaryOk",
+      "en": "Windows Update is not paused."
+    },
+    {
+      "key": "EnvUpdateSummaryUnknown",
+      "en": "Windows Update status could not be determined."
+    },
+    {
+      "key": "EnvUpdateSummaryPaused",
+      "en": "Updates are paused until {0}."
+    },
+    {
+      "key": "EnvUpdateSummaryPausedUnknown",
+      "en": "Updates are paused."
+    },
+    {
+      "key": "EnvUpdateSummaryBusy",
+      "en": "An update is in progress or a restart is pending."
+    },
+    {
+      "key": "EnvHardwareSummary",
+      "en": "{0} · {1} of RAM · {2} system drive"
+    },
+    {
+      "key": "EnvHardwareLaptop",
+      "en": "Laptop"
+    },
+    {
+      "key": "EnvHardwareDesktop",
+      "en": "Desktop"
+    },
+    {
+      "key": "EnvHardwareUnknown",
+      "en": "Unknown form factor"
+    },
+    {
+      "key": "EnvPendingNone",
+      "en": "Nothing pending."
+    },
+    {
+      "key": "EnvPendingSomething",
+      "en": "Something is pending — an installer, a backup, or a restart."
+    },
+    {
+      "key": "EnvMarkerEvidenceTitle",
+      "en": "What was found"
+    },
+    {
+      "key": "EnvProbeChecked",
+      "en": "checked in {0} ms"
+    },
+    {
+      "key": "EnvStorageSenseOn",
+      "en": "Storage Sense is on."
+    },
+    {
+      "key": "EnvStorageSenseOff",
+      "en": "Storage Sense is off."
+    },
+    {
+      "key": "EnvOneDriveSummary",
+      "en": "{0} sync providers · Files On-Demand {1}"
+    },
+    {
+      "key": "EnvManagedYes",
+      "en": "This PC is managed by an organisation."
+    },
+    {
+      "key": "EnvManagedNo",
+      "en": "This PC is not managed by an organisation."
+    },
+    {
+      "key": "EnvVirtSummary",
+      "en": "Hyper-V {0} · WSL {1} · Virtualization-based security {2}"
+    },
+    {
+      "key": "EnvLowDiskNote",
+      "en": "The system drive is low on space."
+    },
+    {
+      "key": "EnvGateDefenderStripped",
+      "en": "Windows Defender was removed from this installation, so there is no Defender history to show."
+    },
+    {
+      "key": "EnvGateDefenderDisabled",
+      "en": "Defender is not the active antivirus ({0} is), so Defender history is hidden."
+    },
+    {
+      "key": "EnvGateDefenderRetention",
+      "en": "Defender is the only active antivirus. Clearing its history removes detection records — keep what you may need."
+    },
+    {
+      "key": "EnvGateThirdPartyAv",
+      "en": "{0} is the active antivirus. Purge never touches antivirus data."
+    },
+    {
+      "key": "EnvGateAvUnknown",
+      "en": "Antivirus state is unknown, so Purge is cautious with antivirus-adjacent items."
+    },
+    {
+      "key": "EnvGateComponentAbsent",
+      "en": "{0} is not installed, so there is nothing to clean here."
+    },
+    {
+      "key": "EnvGateUpdatesPaused",
+      "en": "Windows Update is paused, so update-related cleanup is hidden until updates resume. Nothing was changed."
+    },
+    {
+      "key": "EnvGateUpdateBusy",
+      "en": "An update is in progress or a restart is pending, so servicing cleanup is hidden until it finishes."
+    },
+    {
+      "key": "EnvGateOnDemandOff",
+      "en": "Files On-Demand is off, so there are no cloud placeholders to free."
+    },
+    {
+      "key": "EnvGateHyperVAbsent",
+      "en": "Hyper-V is not installed."
+    },
+    {
+      "key": "EnvGateWslAbsent",
+      "en": "WSL is not installed or has no distributions."
+    },
+    {
+      "key": "EnvGateManaged",
+      "en": "Managed by your organisation — Purge shows this but takes no action."
+    },
+    {
+      "key": "EnvGateStorageSense",
+      "en": "Storage Sense already handles this."
+    },
+    {
+      "key": "EnvGatePlaceholders",
+      "en": "These files live in the cloud. Freeing them means downloading them again later, which needs internet."
+    },
+    {
+      "key": "EnvGateHibernationLaptop",
+      "en": "You won't be able to hibernate; Fast Startup also turns off."
+    },
+    {
+      "key": "EnvGateOutcomeHidden",
+      "en": "Hidden"
+    },
+    {
+      "key": "EnvGateOutcomeDisabled",
+      "en": "Shown, no action"
+    },
+    {
+      "key": "EnvGateOutcomeDowngraded",
+      "en": "Check first"
+    },
+    {
+      "key": "EnvGateOutcomeOffered",
+      "en": "Offered"
+    },
+    {
+      "key": "EnvMarkerRevisionTool",
+      "en": "Revision Tool or AME Wizard traces found"
+    },
+    {
+      "key": "EnvMarkerPause2038",
+      "en": "Updates paused until 2038"
+    },
+    {
+      "key": "EnvMarkerEdgeBlock",
+      "en": "Edge blocked by policy while WebView2 is present"
+    },
+    {
+      "key": "EnvMarkerDefenderStripped",
+      "en": "Defender removed, with SmartScreen and virtualization-based security off"
+    },
+    {
+      "key": "EnvMarkerAppxDeprovisioned",
+      "en": "Many built-in apps removed from the system image"
+    },
+    {
+      "key": "EnvMarkerEdgeAbsent",
+      "en": "Microsoft Edge is not installed"
+    },
+    {
+      "key": "EnvMarkerOneDriveAbsent",
+      "en": "OneDrive is not installed"
+    },
+    {
+      "key": "EnvMarkerWidgetsAbsent",
+      "en": "Widgets is not installed"
+    },
+    {
+      "key": "EnvMarkerRecallAbsent",
+      "en": "Recall/Copilot is not installed"
+    },
+    {
+      "key": "EnvMarkerTeamsAbsent",
+      "en": "Teams is not installed"
+    },
+    {
+      "key": "EnvMarkerPhotosAbsent",
+      "en": "Photos is not installed"
+    },
+    {
+      "key": "EnvMarkerPhoneLinkAbsent",
+      "en": "Phone Link is not installed"
+    },
+    {
+      "key": "EnvMarkerXboxAbsent",
+      "en": "Xbox is not installed"
+    },
+    {
+      "key": "EnvMarkerTelemetryDisabled",
+      "en": "Telemetry and error reporting services removed or disabled"
+    },
+    {
+      "key": "EnvMarkerSecurityHealth",
+      "en": "Windows Security removed from startup and its tray icon hidden"
+    },
+    {
+      "key": "EnvMarkerDataUsage",
+      "en": "Data-usage monitoring is broken"
+    },
+    {
+      "key": "EnvMarkerDebloatTool",
+      "en": "A debloat tool was found on this PC"
+    },
+    {
+      "key": "EnvOverrideNone",
+      "en": "Use detected setup"
+    },
+    {
+      "key": "EnvOverrideStock",
+      "en": "Treat as stock Windows"
+    },
+    {
+      "key": "EnvOverrideModified",
+      "en": "Treat as modified"
+    },
+    {
+      "key": "EnvYourSetupTitle",
+      "en": "Your setup"
+    },
+    {
+      "key": "EnvRecheck",
+      "en": "Re-check"
+    },
+    {
+      "key": "EnvDetecting",
+      "en": "Checking your setup…"
     }
   ]
 }

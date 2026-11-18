@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
 using PurgeWindows.Core;
+using PurgeWindows.Core.Environment;
 using PurgeWindows.Localization;
 using PurgeWindows.Services;
 
@@ -36,7 +37,20 @@ public sealed class MainVM : ObservableObject
         SpaceMap = new SpaceMapVM(this);
         RefreshDrives();
         RefreshRemoval();
+
+        // Environment detection (Phase 3): starts async at launch and never blocks first
+        // paint. The demo never probes the real machine. When results arrive, results
+        // already on screen are re-gated from the retained raw scan output.
+        Environment = new EnvironmentVM(
+            demo ? new UnknownEnvironmentDetector() : new EnvironmentDetector(new WindowsEnvironmentDataSource()),
+            demo ? null : new PreferencesStore(PreferencesStore.DefaultPath),
+            CategoryCatalog.Instance);
+        Environment.SnapshotChanged += (_, _) => OnEnvironmentChanged();
+        _ = Environment.StartDetectionAsync();
     }
+
+    /// <summary>The environment disclosure data + re-check command (Phase 3). The shell wave binds the panel to this.</summary>
+    public EnvironmentVM Environment { get; }
 
     public bool IsDemo { get; }
     public bool IsAdmin { get; }
@@ -386,10 +400,25 @@ public sealed class MainVM : ObservableObject
 
     public ObservableCollection<CategoryVM> Categories { get; } = [];
 
+    /// <summary>The raw scan output, retained so detection results arriving after a scan can
+    /// re-gate the same results without re-scanning. Gating never mutates these.</summary>
+    List<CleanupCategory>? _lastScanResults;
+
+    /// <summary>Re-gates the results on screen when detection completes or the override changes.
+    /// Selections are rebuilt with the categories; detection normally completes before the
+    /// first scan, so this rarely runs while the user has selected anything.</summary>
+    void OnEnvironmentChanged()
+    {
+        if (State == AppState.Results && _lastScanResults is not null)
+            BuildCategories(_lastScanResults);
+    }
+
     void BuildCategories(List<CleanupCategory> results)
     {
+        _lastScanResults = results;
+        var gated = CategoryGate.ApplyToScan(results, Environment.CurrentGating);
         Categories.Clear();
-        var shown = results.Where(c => c.Blocked || c.Size > 0).ToList();
+        var shown = gated.Where(c => c.Blocked || c.Size > 0).ToList();
         var ordered = shown.Where(c => c.Tier == SafetyLevel.Safe && !c.Blocked).OrderByDescending(c => c.Size)
             .Concat(shown.Where(c => c.Blocked))
             .Concat(shown.Where(c => c.Tier == SafetyLevel.CheckFirst && !c.Blocked).OrderByDescending(c => c.Size))

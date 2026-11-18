@@ -1201,4 +1201,325 @@
   <data name="CleanFigureOfTotal" xml:space="preserve">
     <value>of {0}</value>
   </data>
+  <data name="EnvOsFormat" xml:space="preserve">
+    <value>{0} {1} (build {2})</value>
+  </data>
+  <data name="EnvOsFormatNoVersion" xml:space="preserve">
+    <value>{0} (build {1})</value>
+  </data>
+  <data name="EnvOsBuildOnly" xml:space="preserve">
+    <value>Windows build {0}</value>
+  </data>
+  <data name="EnvOsUnknown" xml:space="preserve">
+    <value>Windows version unknown</value>
+  </data>
+  <data name="EnvModStock" xml:space="preserve">
+    <value>Stock Windows — no modification signs found.</value>
+  </data>
+  <data name="EnvModComponentsMissing" xml:space="preserve">
+    <value>Some built-in Windows components are missing or disabled.</value>
+  </data>
+  <data name="EnvModModifiedOther" xml:space="preserve">
+    <value>A modified Windows installation.</value>
+  </data>
+  <data name="EnvModLikelyReviOS" xml:space="preserve">
+    <value>A modified Windows installation (looks like ReviOS).</value>
+  </data>
+  <data name="EnvModUnknown" xml:space="preserve">
+    <value>Windows modification status unknown.</value>
+  </data>
+  <data name="EnvOverrideActiveNote" xml:space="preserve">
+    <value>(Your override is applied.)</value>
+  </data>
+  <data name="EnvAvNoneRegistered" xml:space="preserve">
+    <value>No antivirus registered with Windows Security Center.</value>
+  </data>
+  <data name="EnvAvStateEnabled" xml:space="preserve">
+    <value>on</value>
+  </data>
+  <data name="EnvAvStateDisabled" xml:space="preserve">
+    <value>off or snoozed</value>
+  </data>
+  <data name="EnvAvStateOutOfDate" xml:space="preserve">
+    <value>out of date</value>
+  </data>
+  <data name="EnvAvStateUnknown" xml:space="preserve">
+    <value>state unknown</value>
+  </data>
+  <data name="EnvAvProductFormat" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="EnvPrivilegeAdmin" xml:space="preserve">
+    <value>Running as administrator.</value>
+  </data>
+  <data name="EnvPrivilegeStandard" xml:space="preserve">
+    <value>Running as a standard user.</value>
+  </data>
+  <data name="EnvValueUnknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="EnvValueOn" xml:space="preserve">
+    <value>On</value>
+  </data>
+  <data name="EnvValueOff" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="EnvValueEnabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="EnvValuePresent" xml:space="preserve">
+    <value>Present</value>
+  </data>
+  <data name="EnvValueAbsent" xml:space="preserve">
+    <value>Absent</value>
+  </data>
+  <data name="EnvWin10Notice" xml:space="preserve">
+    <value>Windows 10 is out of support — consider upgrading.</value>
+  </data>
+  <data name="EnvProbeOs" xml:space="preserve">
+    <value>Windows version</value>
+  </data>
+  <data name="EnvProbeComponents" xml:space="preserve">
+    <value>Built-in components</value>
+  </data>
+  <data name="EnvProbeModMarkers" xml:space="preserve">
+    <value>Modification signs</value>
+  </data>
+  <data name="EnvProbeAntivirus" xml:space="preserve">
+    <value>Antivirus</value>
+  </data>
+  <data name="EnvProbeServices" xml:space="preserve">
+    <value>Services</value>
+  </data>
+  <data name="EnvProbeUpdates" xml:space="preserve">
+    <value>Windows Update</value>
+  </data>
+  <data name="EnvProbeStorageSense" xml:space="preserve">
+    <value>Storage Sense</value>
+  </data>
+  <data name="EnvProbeOneDrive" xml:space="preserve">
+    <value>OneDrive</value>
+  </data>
+  <data name="EnvProbeManaged" xml:space="preserve">
+    <value>Managed by an organisation</value>
+  </data>
+  <data name="EnvProbeVirtualization" xml:space="preserve">
+    <value>Virtualization</value>
+  </data>
+  <data name="EnvProbeHardware" xml:space="preserve">
+    <value>Hardware</value>
+  </data>
+  <data name="EnvProbePending" xml:space="preserve">
+    <value>Pending operations</value>
+  </data>
+  <data name="EnvProbeReasonTimedOut" xml:space="preserve">
+    <value>timed out</value>
+  </data>
+  <data name="EnvProbeReasonAccessDenied" xml:space="preserve">
+    <value>access denied</value>
+  </data>
+  <data name="EnvProbeReasonQueryFailed" xml:space="preserve">
+    <value>check failed</value>
+  </data>
+  <data name="EnvProbeReasonNotAvailable" xml:space="preserve">
+    <value>not available</value>
+  </data>
+  <data name="EnvProbeUnknownWithReason" xml:space="preserve">
+    <value>Unknown ({0})</value>
+  </data>
+  <data name="EnvComponentsSummary" xml:space="preserve">
+    <value>{0} present, {1} absent, {2} unknown</value>
+  </data>
+  <data name="EnvMarkersObserved" xml:space="preserve">
+    <value>{0} markers observed</value>
+  </data>
+  <data name="EnvServicesSummary" xml:space="preserve">
+    <value>{0} running, {1} stopped or disabled, {2} unknown</value>
+  </data>
+  <data name="EnvUpdateSummaryOk" xml:space="preserve">
+    <value>Windows Update is not paused.</value>
+  </data>
+  <data name="EnvUpdateSummaryUnknown" xml:space="preserve">
+    <value>Windows Update status could not be determined.</value>
+  </data>
+  <data name="EnvUpdateSummaryPaused" xml:space="preserve">
+    <value>Updates are paused until {0}.</value>
+  </data>
+  <data name="EnvUpdateSummaryPausedUnknown" xml:space="preserve">
+    <value>Updates are paused.</value>
+  </data>
+  <data name="EnvUpdateSummaryBusy" xml:space="preserve">
+    <value>An update is in progress or a restart is pending.</value>
+  </data>
+  <data name="EnvHardwareSummary" xml:space="preserve">
+    <value>{0} · {1} of RAM · {2} system drive</value>
+  </data>
+  <data name="EnvHardwareLaptop" xml:space="preserve">
+    <value>Laptop</value>
+  </data>
+  <data name="EnvHardwareDesktop" xml:space="preserve">
+    <value>Desktop</value>
+  </data>
+  <data name="EnvHardwareUnknown" xml:space="preserve">
+    <value>Unknown form factor</value>
+  </data>
+  <data name="EnvPendingNone" xml:space="preserve">
+    <value>Nothing pending.</value>
+  </data>
+  <data name="EnvPendingSomething" xml:space="preserve">
+    <value>Something is pending — an installer, a backup, or a restart.</value>
+  </data>
+  <data name="EnvMarkerEvidenceTitle" xml:space="preserve">
+    <value>What was found</value>
+  </data>
+  <data name="EnvProbeChecked" xml:space="preserve">
+    <value>checked in {0} ms</value>
+  </data>
+  <data name="EnvStorageSenseOn" xml:space="preserve">
+    <value>Storage Sense is on.</value>
+  </data>
+  <data name="EnvStorageSenseOff" xml:space="preserve">
+    <value>Storage Sense is off.</value>
+  </data>
+  <data name="EnvOneDriveSummary" xml:space="preserve">
+    <value>{0} sync providers · Files On-Demand {1}</value>
+  </data>
+  <data name="EnvManagedYes" xml:space="preserve">
+    <value>This PC is managed by an organisation.</value>
+  </data>
+  <data name="EnvManagedNo" xml:space="preserve">
+    <value>This PC is not managed by an organisation.</value>
+  </data>
+  <data name="EnvVirtSummary" xml:space="preserve">
+    <value>Hyper-V {0} · WSL {1} · Virtualization-based security {2}</value>
+  </data>
+  <data name="EnvLowDiskNote" xml:space="preserve">
+    <value>The system drive is low on space.</value>
+  </data>
+  <data name="EnvGateDefenderStripped" xml:space="preserve">
+    <value>Windows Defender was removed from this installation, so there is no Defender history to show.</value>
+  </data>
+  <data name="EnvGateDefenderDisabled" xml:space="preserve">
+    <value>Defender is not the active antivirus ({0} is), so Defender history is hidden.</value>
+  </data>
+  <data name="EnvGateDefenderRetention" xml:space="preserve">
+    <value>Defender is the only active antivirus. Clearing its history removes detection records — keep what you may need.</value>
+  </data>
+  <data name="EnvGateThirdPartyAv" xml:space="preserve">
+    <value>{0} is the active antivirus. Purge never touches antivirus data.</value>
+  </data>
+  <data name="EnvGateAvUnknown" xml:space="preserve">
+    <value>Antivirus state is unknown, so Purge is cautious with antivirus-adjacent items.</value>
+  </data>
+  <data name="EnvGateComponentAbsent" xml:space="preserve">
+    <value>{0} is not installed, so there is nothing to clean here.</value>
+  </data>
+  <data name="EnvGateUpdatesPaused" xml:space="preserve">
+    <value>Windows Update is paused, so update-related cleanup is hidden until updates resume. Nothing was changed.</value>
+  </data>
+  <data name="EnvGateUpdateBusy" xml:space="preserve">
+    <value>An update is in progress or a restart is pending, so servicing cleanup is hidden until it finishes.</value>
+  </data>
+  <data name="EnvGateOnDemandOff" xml:space="preserve">
+    <value>Files On-Demand is off, so there are no cloud placeholders to free.</value>
+  </data>
+  <data name="EnvGateHyperVAbsent" xml:space="preserve">
+    <value>Hyper-V is not installed.</value>
+  </data>
+  <data name="EnvGateWslAbsent" xml:space="preserve">
+    <value>WSL is not installed or has no distributions.</value>
+  </data>
+  <data name="EnvGateManaged" xml:space="preserve">
+    <value>Managed by your organisation — Purge shows this but takes no action.</value>
+  </data>
+  <data name="EnvGateStorageSense" xml:space="preserve">
+    <value>Storage Sense already handles this.</value>
+  </data>
+  <data name="EnvGatePlaceholders" xml:space="preserve">
+    <value>These files live in the cloud. Freeing them means downloading them again later, which needs internet.</value>
+  </data>
+  <data name="EnvGateHibernationLaptop" xml:space="preserve">
+    <value>You won't be able to hibernate; Fast Startup also turns off.</value>
+  </data>
+  <data name="EnvGateOutcomeHidden" xml:space="preserve">
+    <value>Hidden</value>
+  </data>
+  <data name="EnvGateOutcomeDisabled" xml:space="preserve">
+    <value>Shown, no action</value>
+  </data>
+  <data name="EnvGateOutcomeDowngraded" xml:space="preserve">
+    <value>Check first</value>
+  </data>
+  <data name="EnvGateOutcomeOffered" xml:space="preserve">
+    <value>Offered</value>
+  </data>
+  <data name="EnvMarkerRevisionTool" xml:space="preserve">
+    <value>Revision Tool or AME Wizard traces found</value>
+  </data>
+  <data name="EnvMarkerPause2038" xml:space="preserve">
+    <value>Updates paused until 2038</value>
+  </data>
+  <data name="EnvMarkerEdgeBlock" xml:space="preserve">
+    <value>Edge blocked by policy while WebView2 is present</value>
+  </data>
+  <data name="EnvMarkerDefenderStripped" xml:space="preserve">
+    <value>Defender removed, with SmartScreen and virtualization-based security off</value>
+  </data>
+  <data name="EnvMarkerAppxDeprovisioned" xml:space="preserve">
+    <value>Many built-in apps removed from the system image</value>
+  </data>
+  <data name="EnvMarkerEdgeAbsent" xml:space="preserve">
+    <value>Microsoft Edge is not installed</value>
+  </data>
+  <data name="EnvMarkerOneDriveAbsent" xml:space="preserve">
+    <value>OneDrive is not installed</value>
+  </data>
+  <data name="EnvMarkerWidgetsAbsent" xml:space="preserve">
+    <value>Widgets is not installed</value>
+  </data>
+  <data name="EnvMarkerRecallAbsent" xml:space="preserve">
+    <value>Recall/Copilot is not installed</value>
+  </data>
+  <data name="EnvMarkerTeamsAbsent" xml:space="preserve">
+    <value>Teams is not installed</value>
+  </data>
+  <data name="EnvMarkerPhotosAbsent" xml:space="preserve">
+    <value>Photos is not installed</value>
+  </data>
+  <data name="EnvMarkerPhoneLinkAbsent" xml:space="preserve">
+    <value>Phone Link is not installed</value>
+  </data>
+  <data name="EnvMarkerXboxAbsent" xml:space="preserve">
+    <value>Xbox is not installed</value>
+  </data>
+  <data name="EnvMarkerTelemetryDisabled" xml:space="preserve">
+    <value>Telemetry and error reporting services removed or disabled</value>
+  </data>
+  <data name="EnvMarkerSecurityHealth" xml:space="preserve">
+    <value>Windows Security removed from startup and its tray icon hidden</value>
+  </data>
+  <data name="EnvMarkerDataUsage" xml:space="preserve">
+    <value>Data-usage monitoring is broken</value>
+  </data>
+  <data name="EnvMarkerDebloatTool" xml:space="preserve">
+    <value>A debloat tool was found on this PC</value>
+  </data>
+  <data name="EnvOverrideNone" xml:space="preserve">
+    <value>Use detected setup</value>
+  </data>
+  <data name="EnvOverrideStock" xml:space="preserve">
+    <value>Treat as stock Windows</value>
+  </data>
+  <data name="EnvOverrideModified" xml:space="preserve">
+    <value>Treat as modified</value>
+  </data>
+  <data name="EnvYourSetupTitle" xml:space="preserve">
+    <value>Your setup</value>
+  </data>
+  <data name="EnvRecheck" xml:space="preserve">
+    <value>Re-check</value>
+  </data>
+  <data name="EnvDetecting" xml:space="preserve">
+    <value>Checking your setup…</value>
+  </data>
 </root>

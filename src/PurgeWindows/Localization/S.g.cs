@@ -1203,4 +1203,325 @@ public static class S
 
     /// <summary>of {0}</summary>
     public static string CleanFigureOfTotal => Loc.Get("CleanFigureOfTotal");
+
+    /// <summary>{0} {1} (build {2})</summary>
+    public static string EnvOsFormat => Loc.Get("EnvOsFormat");
+
+    /// <summary>{0} (build {1})</summary>
+    public static string EnvOsFormatNoVersion => Loc.Get("EnvOsFormatNoVersion");
+
+    /// <summary>Windows build {0}</summary>
+    public static string EnvOsBuildOnly => Loc.Get("EnvOsBuildOnly");
+
+    /// <summary>Windows version unknown</summary>
+    public static string EnvOsUnknown => Loc.Get("EnvOsUnknown");
+
+    /// <summary>Stock Windows — no modification signs found.</summary>
+    public static string EnvModStock => Loc.Get("EnvModStock");
+
+    /// <summary>Some built-in Windows components are missing or disabled.</summary>
+    public static string EnvModComponentsMissing => Loc.Get("EnvModComponentsMissing");
+
+    /// <summary>A modified Windows installation.</summary>
+    public static string EnvModModifiedOther => Loc.Get("EnvModModifiedOther");
+
+    /// <summary>A modified Windows installation (looks like ReviOS).</summary>
+    public static string EnvModLikelyReviOS => Loc.Get("EnvModLikelyReviOS");
+
+    /// <summary>Windows modification status unknown.</summary>
+    public static string EnvModUnknown => Loc.Get("EnvModUnknown");
+
+    /// <summary>(Your override is applied.)</summary>
+    public static string EnvOverrideActiveNote => Loc.Get("EnvOverrideActiveNote");
+
+    /// <summary>No antivirus registered with Windows Security Center.</summary>
+    public static string EnvAvNoneRegistered => Loc.Get("EnvAvNoneRegistered");
+
+    /// <summary>on</summary>
+    public static string EnvAvStateEnabled => Loc.Get("EnvAvStateEnabled");
+
+    /// <summary>off or snoozed</summary>
+    public static string EnvAvStateDisabled => Loc.Get("EnvAvStateDisabled");
+
+    /// <summary>out of date</summary>
+    public static string EnvAvStateOutOfDate => Loc.Get("EnvAvStateOutOfDate");
+
+    /// <summary>state unknown</summary>
+    public static string EnvAvStateUnknown => Loc.Get("EnvAvStateUnknown");
+
+    /// <summary>{0} ({1})</summary>
+    public static string EnvAvProductFormat => Loc.Get("EnvAvProductFormat");
+
+    /// <summary>Running as administrator.</summary>
+    public static string EnvPrivilegeAdmin => Loc.Get("EnvPrivilegeAdmin");
+
+    /// <summary>Running as a standard user.</summary>
+    public static string EnvPrivilegeStandard => Loc.Get("EnvPrivilegeStandard");
+
+    /// <summary>Unknown</summary>
+    public static string EnvValueUnknown => Loc.Get("EnvValueUnknown");
+
+    /// <summary>On</summary>
+    public static string EnvValueOn => Loc.Get("EnvValueOn");
+
+    /// <summary>Off</summary>
+    public static string EnvValueOff => Loc.Get("EnvValueOff");
+
+    /// <summary>Enabled</summary>
+    public static string EnvValueEnabled => Loc.Get("EnvValueEnabled");
+
+    /// <summary>Present</summary>
+    public static string EnvValuePresent => Loc.Get("EnvValuePresent");
+
+    /// <summary>Absent</summary>
+    public static string EnvValueAbsent => Loc.Get("EnvValueAbsent");
+
+    /// <summary>Windows 10 is out of support — consider upgrading.</summary>
+    public static string EnvWin10Notice => Loc.Get("EnvWin10Notice");
+
+    /// <summary>Windows version</summary>
+    public static string EnvProbeOs => Loc.Get("EnvProbeOs");
+
+    /// <summary>Built-in components</summary>
+    public static string EnvProbeComponents => Loc.Get("EnvProbeComponents");
+
+    /// <summary>Modification signs</summary>
+    public static string EnvProbeModMarkers => Loc.Get("EnvProbeModMarkers");
+
+    /// <summary>Antivirus</summary>
+    public static string EnvProbeAntivirus => Loc.Get("EnvProbeAntivirus");
+
+    /// <summary>Services</summary>
+    public static string EnvProbeServices => Loc.Get("EnvProbeServices");
+
+    /// <summary>Windows Update</summary>
+    public static string EnvProbeUpdates => Loc.Get("EnvProbeUpdates");
+
+    /// <summary>Storage Sense</summary>
+    public static string EnvProbeStorageSense => Loc.Get("EnvProbeStorageSense");
+
+    /// <summary>OneDrive</summary>
+    public static string EnvProbeOneDrive => Loc.Get("EnvProbeOneDrive");
+
+    /// <summary>Managed by an organisation</summary>
+    public static string EnvProbeManaged => Loc.Get("EnvProbeManaged");
+
+    /// <summary>Virtualization</summary>
+    public static string EnvProbeVirtualization => Loc.Get("EnvProbeVirtualization");
+
+    /// <summary>Hardware</summary>
+    public static string EnvProbeHardware => Loc.Get("EnvProbeHardware");
+
+    /// <summary>Pending operations</summary>
+    public static string EnvProbePending => Loc.Get("EnvProbePending");
+
+    /// <summary>timed out</summary>
+    public static string EnvProbeReasonTimedOut => Loc.Get("EnvProbeReasonTimedOut");
+
+    /// <summary>access denied</summary>
+    public static string EnvProbeReasonAccessDenied => Loc.Get("EnvProbeReasonAccessDenied");
+
+    /// <summary>check failed</summary>
+    public static string EnvProbeReasonQueryFailed => Loc.Get("EnvProbeReasonQueryFailed");
+
+    /// <summary>not available</summary>
+    public static string EnvProbeReasonNotAvailable => Loc.Get("EnvProbeReasonNotAvailable");
+
+    /// <summary>Unknown ({0})</summary>
+    public static string EnvProbeUnknownWithReason => Loc.Get("EnvProbeUnknownWithReason");
+
+    /// <summary>{0} present, {1} absent, {2} unknown</summary>
+    public static string EnvComponentsSummary => Loc.Get("EnvComponentsSummary");
+
+    /// <summary>{0} markers observed</summary>
+    public static string EnvMarkersObserved => Loc.Get("EnvMarkersObserved");
+
+    /// <summary>{0} running, {1} stopped or disabled, {2} unknown</summary>
+    public static string EnvServicesSummary => Loc.Get("EnvServicesSummary");
+
+    /// <summary>Windows Update is not paused.</summary>
+    public static string EnvUpdateSummaryOk => Loc.Get("EnvUpdateSummaryOk");
+
+    /// <summary>Windows Update status could not be determined.</summary>
+    public static string EnvUpdateSummaryUnknown => Loc.Get("EnvUpdateSummaryUnknown");
+
+    /// <summary>Updates are paused until {0}.</summary>
+    public static string EnvUpdateSummaryPaused => Loc.Get("EnvUpdateSummaryPaused");
+
+    /// <summary>Updates are paused.</summary>
+    public static string EnvUpdateSummaryPausedUnknown => Loc.Get("EnvUpdateSummaryPausedUnknown");
+
+    /// <summary>An update is in progress or a restart is pending.</summary>
+    public static string EnvUpdateSummaryBusy => Loc.Get("EnvUpdateSummaryBusy");
+
+    /// <summary>{0} · {1} of RAM · {2} system drive</summary>
+    public static string EnvHardwareSummary => Loc.Get("EnvHardwareSummary");
+
+    /// <summary>Laptop</summary>
+    public static string EnvHardwareLaptop => Loc.Get("EnvHardwareLaptop");
+
+    /// <summary>Desktop</summary>
+    public static string EnvHardwareDesktop => Loc.Get("EnvHardwareDesktop");
+
+    /// <summary>Unknown form factor</summary>
+    public static string EnvHardwareUnknown => Loc.Get("EnvHardwareUnknown");
+
+    /// <summary>Nothing pending.</summary>
+    public static string EnvPendingNone => Loc.Get("EnvPendingNone");
+
+    /// <summary>Something is pending — an installer, a backup, or a restart.</summary>
+    public static string EnvPendingSomething => Loc.Get("EnvPendingSomething");
+
+    /// <summary>What was found</summary>
+    public static string EnvMarkerEvidenceTitle => Loc.Get("EnvMarkerEvidenceTitle");
+
+    /// <summary>checked in {0} ms</summary>
+    public static string EnvProbeChecked => Loc.Get("EnvProbeChecked");
+
+    /// <summary>Storage Sense is on.</summary>
+    public static string EnvStorageSenseOn => Loc.Get("EnvStorageSenseOn");
+
+    /// <summary>Storage Sense is off.</summary>
+    public static string EnvStorageSenseOff => Loc.Get("EnvStorageSenseOff");
+
+    /// <summary>{0} sync providers · Files On-Demand {1}</summary>
+    public static string EnvOneDriveSummary => Loc.Get("EnvOneDriveSummary");
+
+    /// <summary>This PC is managed by an organisation.</summary>
+    public static string EnvManagedYes => Loc.Get("EnvManagedYes");
+
+    /// <summary>This PC is not managed by an organisation.</summary>
+    public static string EnvManagedNo => Loc.Get("EnvManagedNo");
+
+    /// <summary>Hyper-V {0} · WSL {1} · Virtualization-based security {2}</summary>
+    public static string EnvVirtSummary => Loc.Get("EnvVirtSummary");
+
+    /// <summary>The system drive is low on space.</summary>
+    public static string EnvLowDiskNote => Loc.Get("EnvLowDiskNote");
+
+    /// <summary>Windows Defender was removed from this installation, so there is no Defender history to show.</summary>
+    public static string EnvGateDefenderStripped => Loc.Get("EnvGateDefenderStripped");
+
+    /// <summary>Defender is not the active antivirus ({0} is), so Defender history is hidden.</summary>
+    public static string EnvGateDefenderDisabled => Loc.Get("EnvGateDefenderDisabled");
+
+    /// <summary>Defender is the only active antivirus. Clearing its history removes detection records — keep what you may need.</summary>
+    public static string EnvGateDefenderRetention => Loc.Get("EnvGateDefenderRetention");
+
+    /// <summary>{0} is the active antivirus. Purge never touches antivirus data.</summary>
+    public static string EnvGateThirdPartyAv => Loc.Get("EnvGateThirdPartyAv");
+
+    /// <summary>Antivirus state is unknown, so Purge is cautious with antivirus-adjacent items.</summary>
+    public static string EnvGateAvUnknown => Loc.Get("EnvGateAvUnknown");
+
+    /// <summary>{0} is not installed, so there is nothing to clean here.</summary>
+    public static string EnvGateComponentAbsent => Loc.Get("EnvGateComponentAbsent");
+
+    /// <summary>Windows Update is paused, so update-related cleanup is hidden until updates resume. Nothing was changed.</summary>
+    public static string EnvGateUpdatesPaused => Loc.Get("EnvGateUpdatesPaused");
+
+    /// <summary>An update is in progress or a restart is pending, so servicing cleanup is hidden until it finishes.</summary>
+    public static string EnvGateUpdateBusy => Loc.Get("EnvGateUpdateBusy");
+
+    /// <summary>Files On-Demand is off, so there are no cloud placeholders to free.</summary>
+    public static string EnvGateOnDemandOff => Loc.Get("EnvGateOnDemandOff");
+
+    /// <summary>Hyper-V is not installed.</summary>
+    public static string EnvGateHyperVAbsent => Loc.Get("EnvGateHyperVAbsent");
+
+    /// <summary>WSL is not installed or has no distributions.</summary>
+    public static string EnvGateWslAbsent => Loc.Get("EnvGateWslAbsent");
+
+    /// <summary>Managed by your organisation — Purge shows this but takes no action.</summary>
+    public static string EnvGateManaged => Loc.Get("EnvGateManaged");
+
+    /// <summary>Storage Sense already handles this.</summary>
+    public static string EnvGateStorageSense => Loc.Get("EnvGateStorageSense");
+
+    /// <summary>These files live in the cloud. Freeing them means downloading them again later, which needs internet.</summary>
+    public static string EnvGatePlaceholders => Loc.Get("EnvGatePlaceholders");
+
+    /// <summary>You won't be able to hibernate; Fast Startup also turns off.</summary>
+    public static string EnvGateHibernationLaptop => Loc.Get("EnvGateHibernationLaptop");
+
+    /// <summary>Hidden</summary>
+    public static string EnvGateOutcomeHidden => Loc.Get("EnvGateOutcomeHidden");
+
+    /// <summary>Shown, no action</summary>
+    public static string EnvGateOutcomeDisabled => Loc.Get("EnvGateOutcomeDisabled");
+
+    /// <summary>Check first</summary>
+    public static string EnvGateOutcomeDowngraded => Loc.Get("EnvGateOutcomeDowngraded");
+
+    /// <summary>Offered</summary>
+    public static string EnvGateOutcomeOffered => Loc.Get("EnvGateOutcomeOffered");
+
+    /// <summary>Revision Tool or AME Wizard traces found</summary>
+    public static string EnvMarkerRevisionTool => Loc.Get("EnvMarkerRevisionTool");
+
+    /// <summary>Updates paused until 2038</summary>
+    public static string EnvMarkerPause2038 => Loc.Get("EnvMarkerPause2038");
+
+    /// <summary>Edge blocked by policy while WebView2 is present</summary>
+    public static string EnvMarkerEdgeBlock => Loc.Get("EnvMarkerEdgeBlock");
+
+    /// <summary>Defender removed, with SmartScreen and virtualization-based security off</summary>
+    public static string EnvMarkerDefenderStripped => Loc.Get("EnvMarkerDefenderStripped");
+
+    /// <summary>Many built-in apps removed from the system image</summary>
+    public static string EnvMarkerAppxDeprovisioned => Loc.Get("EnvMarkerAppxDeprovisioned");
+
+    /// <summary>Microsoft Edge is not installed</summary>
+    public static string EnvMarkerEdgeAbsent => Loc.Get("EnvMarkerEdgeAbsent");
+
+    /// <summary>OneDrive is not installed</summary>
+    public static string EnvMarkerOneDriveAbsent => Loc.Get("EnvMarkerOneDriveAbsent");
+
+    /// <summary>Widgets is not installed</summary>
+    public static string EnvMarkerWidgetsAbsent => Loc.Get("EnvMarkerWidgetsAbsent");
+
+    /// <summary>Recall/Copilot is not installed</summary>
+    public static string EnvMarkerRecallAbsent => Loc.Get("EnvMarkerRecallAbsent");
+
+    /// <summary>Teams is not installed</summary>
+    public static string EnvMarkerTeamsAbsent => Loc.Get("EnvMarkerTeamsAbsent");
+
+    /// <summary>Photos is not installed</summary>
+    public static string EnvMarkerPhotosAbsent => Loc.Get("EnvMarkerPhotosAbsent");
+
+    /// <summary>Phone Link is not installed</summary>
+    public static string EnvMarkerPhoneLinkAbsent => Loc.Get("EnvMarkerPhoneLinkAbsent");
+
+    /// <summary>Xbox is not installed</summary>
+    public static string EnvMarkerXboxAbsent => Loc.Get("EnvMarkerXboxAbsent");
+
+    /// <summary>Telemetry and error reporting services removed or disabled</summary>
+    public static string EnvMarkerTelemetryDisabled => Loc.Get("EnvMarkerTelemetryDisabled");
+
+    /// <summary>Windows Security removed from startup and its tray icon hidden</summary>
+    public static string EnvMarkerSecurityHealth => Loc.Get("EnvMarkerSecurityHealth");
+
+    /// <summary>Data-usage monitoring is broken</summary>
+    public static string EnvMarkerDataUsage => Loc.Get("EnvMarkerDataUsage");
+
+    /// <summary>A debloat tool was found on this PC</summary>
+    public static string EnvMarkerDebloatTool => Loc.Get("EnvMarkerDebloatTool");
+
+    /// <summary>Use detected setup</summary>
+    public static string EnvOverrideNone => Loc.Get("EnvOverrideNone");
+
+    /// <summary>Treat as stock Windows</summary>
+    public static string EnvOverrideStock => Loc.Get("EnvOverrideStock");
+
+    /// <summary>Treat as modified</summary>
+    public static string EnvOverrideModified => Loc.Get("EnvOverrideModified");
+
+    /// <summary>Your setup</summary>
+    public static string EnvYourSetupTitle => Loc.Get("EnvYourSetupTitle");
+
+    /// <summary>Re-check</summary>
+    public static string EnvRecheck => Loc.Get("EnvRecheck");
+
+    /// <summary>Checking your setup…</summary>
+    public static string EnvDetecting => Loc.Get("EnvDetecting");
 }
